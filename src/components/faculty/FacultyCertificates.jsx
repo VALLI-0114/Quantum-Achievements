@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Award, ShieldCheck, ArrowLeft, Download, Search, User, CheckCircle2, FileDown, Plus, UserPlus } from 'lucide-react';
+import { Award, ShieldCheck, ArrowLeft, Download, Search, User, CheckCircle2, FileDown, Plus, UserPlus, Trash2 } from 'lucide-react';
 import { useQuantumDB } from '../../data/db';
 import { downloadCategoryReportPDF, downloadSingleCertificateReportPDF } from '../../utils/pdfGenerator';
 import { AddParticipantModal } from '../common/AddParticipantModal';
 
 export const FacultyCertificates = ({ onOpenCertificate, onOpenProfile, onAddCertificate }) => {
-  const { certificates, faculty } = useQuantumDB();
+  const { certificates, faculty, deleteRecord, removeCertificateRecipient } = useQuantumDB();
   const [selectedCertId, setSelectedCertId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [facultySearch, setFacultySearch] = useState('');
@@ -90,9 +90,22 @@ export const FacultyCertificates = ({ onOpenCertificate, onOpenProfile, onAddCer
               </h1>
             </div>
 
-            <button className="btn btn-outline" onClick={handleDownloadCertRoster}>
-              <Download size={16} /> Download Recipients PDF
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button className="btn btn-outline" onClick={handleDownloadCertRoster}>
+                <Download size={16} /> Download Recipients PDF
+              </button>
+              <button
+                className="btn btn-danger"
+                onClick={() => {
+                  if (window.confirm(`Are you sure you want to delete certificate "${selectedCert.title}"?`)) {
+                    deleteRecord('certificates', selectedCert.id);
+                    setSelectedCertId(null);
+                  }
+                }}
+              >
+                <Trash2 size={15} /> Delete Certificate
+              </button>
+            </div>
           </div>
 
           <div style={{
@@ -168,12 +181,13 @@ export const FacultyCertificates = ({ onOpenCertificate, onOpenProfile, onAddCer
                 <th>Distinction</th>
                 <th style={{ textAlign: 'center' }}>Certificate</th>
                 <th style={{ textAlign: 'center' }}>Profile</th>
+                <th style={{ textAlign: 'center' }}>Action</th>
               </tr>
             </thead>
             <tbody>
               {recipients.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                  <td colSpan="8" style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
                     No faculty recipients recorded for this credential matching search.
                   </td>
                 </tr>
@@ -243,6 +257,19 @@ export const FacultyCertificates = ({ onOpenCertificate, onOpenProfile, onAddCer
                         <User size={14} /> View Profile
                       </button>
                     </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <button
+                        className="btn-icon-danger"
+                        title="Remove faculty recipient"
+                        onClick={() => {
+                          if (window.confirm(`Remove ${item.faculty.name} from this certificate?`)) {
+                            removeCertificateRecipient(selectedCert.id, 'faculty', item.faculty.id);
+                          }
+                        }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -309,12 +336,26 @@ export const FacultyCertificates = ({ onOpenCertificate, onOpenProfile, onAddCer
               <div
                 key={cert.id}
                 className="item-card"
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer', position: 'relative' }}
                 onClick={() => setSelectedCertId(cert.id)}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                   <span className="metric-pill secondary">{cert.code || 'VERIFIED'}</span>
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{cert.issuer}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{cert.issuer}</span>
+                    <button
+                      className="btn-icon-danger"
+                      title="Delete Certificate"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`Are you sure you want to delete certificate "${cert.title}"?`)) {
+                          deleteRecord('certificates', cert.id);
+                        }
+                      }}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
                 </div>
 
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.75rem', lineHeight: 1.35 }}>

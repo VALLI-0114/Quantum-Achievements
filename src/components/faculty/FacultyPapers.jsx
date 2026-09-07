@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { FileText, ArrowLeft, Search, User, ExternalLink, Quote, FileDown, Download } from 'lucide-react';
+import { FileText, ArrowLeft, Search, User, ExternalLink, Quote, FileDown, Download, Trash2 } from 'lucide-react';
 import { useQuantumDB } from '../../data/db';
 import { downloadCategoryReportPDF, downloadPaperReportPDF } from '../../utils/pdfGenerator';
 
 export const FacultyPapers = ({ onOpenProfile, onAddPaper }) => {
-  const { researchPapers, faculty, students } = useQuantumDB();
+  const { researchPapers, faculty, students, deleteRecord, removePaperAuthor } = useQuantumDB();
   const [selectedPaperId, setSelectedPaperId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -34,11 +34,11 @@ export const FacultyPapers = ({ onOpenProfile, onAddPaper }) => {
 
   if (selectedPaper) {
     const facAuthors = (selectedPaper.facultyAuthors || []).map(fid => {
-      return faculty.find(f => f.id === fid) || { name: "Dr. Faculty Author", department: "Physics" };
+      return faculty.find(f => f.id === fid) || { id: fid, name: "Dr. Faculty Author", department: "Physics" };
     });
 
     const stuAuthors = (selectedPaper.studentAuthors || []).map(sid => {
-      return students.find(s => s.id === sid) || { name: "Student Co-Author", department: "Computer Science" };
+      return students.find(s => s.id === sid) || { id: sid, name: "Student Co-Author", department: "Computer Science" };
     });
 
     const handleDownloadSinglePaperPDF = () => {
@@ -84,9 +84,22 @@ export const FacultyPapers = ({ onOpenProfile, onAddPaper }) => {
               </div>
             </div>
 
-            <button className="btn btn-outline" onClick={handleDownloadSinglePaperPDF}>
-              <Download size={16} /> Download Paper PDF
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button className="btn btn-outline" onClick={handleDownloadSinglePaperPDF}>
+                <Download size={16} /> Download Paper PDF
+              </button>
+              <button
+                className="btn btn-danger"
+                onClick={() => {
+                  if (window.confirm(`Are you sure you want to delete "${selectedPaper.title}"?`)) {
+                    deleteRecord('researchPapers', selectedPaper.id);
+                    setSelectedPaperId(null);
+                  }
+                }}
+              >
+                <Trash2 size={16} /> Delete Paper
+              </button>
+            </div>
           </div>
 
           <div style={{
@@ -138,9 +151,22 @@ export const FacultyPapers = ({ onOpenProfile, onAddPaper }) => {
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{f.department}</div>
                     </div>
                   </div>
-                  <button className="btn btn-outline btn-sm" onClick={() => onOpenProfile(f.id, 'faculty')}>
-                    <User size={14} /> Profile
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <button className="btn btn-outline btn-sm" onClick={() => onOpenProfile(f.id, 'faculty')}>
+                      <User size={14} /> Profile
+                    </button>
+                    <button
+                      className="btn-icon-danger"
+                      title="Remove Faculty Author"
+                      onClick={() => {
+                        if (window.confirm(`Remove ${f.name} from this paper?`)) {
+                          removePaperAuthor(selectedPaper.id, 'faculty', f.id);
+                        }
+                      }}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -159,9 +185,22 @@ export const FacultyPapers = ({ onOpenProfile, onAddPaper }) => {
                         <strong style={{ fontSize: '0.95rem' }}>{s.name}</strong>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{s.studentId} • {s.department}</div>
                       </div>
-                      <button className="btn btn-outline btn-sm" onClick={() => onOpenProfile(s.id, 'student')}>
-                        <User size={14} /> Profile
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <button className="btn btn-outline btn-sm" onClick={() => onOpenProfile(s.id, 'student')}>
+                          <User size={14} /> Profile
+                        </button>
+                        <button
+                          className="btn-icon-danger"
+                          title="Remove Student Author"
+                          onClick={() => {
+                            if (window.confirm(`Remove ${s.name} from this paper?`)) {
+                              removePaperAuthor(selectedPaper.id, 'student', s.id);
+                            }
+                          }}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -225,7 +264,21 @@ export const FacultyPapers = ({ onOpenProfile, onAddPaper }) => {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                   <span className="metric-pill secondary">{paper.researchArea}</span>
-                  <span className="metric-pill primary">{paper.citations || 0} Citations</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span className="metric-pill primary">{paper.citations || 0} Citations</span>
+                    <button
+                      className="btn-icon-danger"
+                      title="Delete Research Paper"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`Are you sure you want to delete "${paper.title}"?`)) {
+                          deleteRecord('researchPapers', paper.id);
+                        }
+                      }}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                 </div>
 
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>

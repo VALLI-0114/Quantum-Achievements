@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Trophy, ArrowLeft, Search, User, FileDown, Download } from 'lucide-react';
+import { Trophy, ArrowLeft, Search, User, FileDown, Download, Trash2 } from 'lucide-react';
 import { useQuantumDB } from '../../data/db';
 import { downloadCategoryReportPDF, downloadHackathonReportPDF } from '../../utils/pdfGenerator';
 
 export const StudentHackathons = ({ onOpenProfile, onAddHackathon }) => {
-  const { hackathons, students } = useQuantumDB();
+  const { hackathons, students, deleteRecord, removeHackathonParticipant } = useQuantumDB();
   const [selectedHackathonId, setSelectedHackathonId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -35,6 +35,7 @@ export const StudentHackathons = ({ onOpenProfile, onAddHackathon }) => {
   if (selectedHackathon) {
     const studentParticipants = (selectedHackathon.studentParticipants || []).map(sp => {
       const s = students.find(stu => stu.id === sp.studentId) || {
+        id: sp.studentId,
         name: "Student Competitor",
         department: "Computer Science",
         studentId: "QU-2023"
@@ -83,9 +84,22 @@ export const StudentHackathons = ({ onOpenProfile, onAddHackathon }) => {
               </h1>
             </div>
 
-            <button className="btn btn-outline" onClick={handleDownloadSingleHackathonPDF}>
-              <Download size={16} /> Download Hackathon PDF
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button className="btn btn-outline" onClick={handleDownloadSingleHackathonPDF}>
+                <Download size={16} /> Download Hackathon PDF
+              </button>
+              <button
+                className="btn btn-danger"
+                onClick={() => {
+                  if (window.confirm(`Are you sure you want to delete "${selectedHackathon.name}"?`)) {
+                    deleteRecord('hackathons', selectedHackathon.id);
+                    setSelectedHackathonId(null);
+                  }
+                }}
+              >
+                <Trash2 size={16} /> Delete Hackathon
+              </button>
+            </div>
           </div>
 
           <div style={{
@@ -137,12 +151,13 @@ export const StudentHackathons = ({ onOpenProfile, onAddHackathon }) => {
                 <th>Project Built</th>
                 <th>Position & Awards Won</th>
                 <th style={{ textAlign: 'center' }}>Profile</th>
+                <th style={{ textAlign: 'center' }}>Action</th>
               </tr>
             </thead>
             <tbody>
               {studentParticipants.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                  <td colSpan="8" style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
                     No student participation records found for this hackathon.
                   </td>
                 </tr>
@@ -196,6 +211,19 @@ export const StudentHackathons = ({ onOpenProfile, onAddHackathon }) => {
                         onClick={() => onOpenProfile(item.student.id, 'student')}
                       >
                         <User size={14} /> View Profile
+                      </button>
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <button
+                        className="btn-icon-danger"
+                        title="Remove Participant"
+                        onClick={() => {
+                          if (window.confirm(`Remove ${item.student.name} from this hackathon?`)) {
+                            removeHackathonParticipant(selectedHackathon.id, 'student', item.studentId);
+                          }
+                        }}
+                      >
+                        <Trash2 size={15} />
                       </button>
                     </td>
                   </tr>
@@ -258,7 +286,21 @@ export const StudentHackathons = ({ onOpenProfile, onAddHackathon }) => {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                   <span className="metric-pill primary">{h.edition}</span>
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{h.date}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{h.date}</span>
+                    <button
+                      className="btn-icon-danger"
+                      title="Delete Hackathon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`Are you sure you want to delete "${h.name}"?`)) {
+                          deleteRecord('hackathons', h.id);
+                        }
+                      }}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                 </div>
 
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>

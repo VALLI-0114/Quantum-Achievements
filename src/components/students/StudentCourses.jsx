@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { BookOpen, Users, Clock, Award, ArrowLeft, Download, Search, CheckCircle2, User, FileDown, Plus, UserPlus } from 'lucide-react';
+import { BookOpen, Users, Clock, Award, ArrowLeft, Download, Search, CheckCircle2, User, FileDown, Plus, UserPlus, Trash2 } from 'lucide-react';
 import { useQuantumDB } from '../../data/db';
 import { downloadCourseRosterPDF, downloadCategoryReportPDF } from '../../utils/pdfGenerator';
 import { AddParticipantModal } from '../common/AddParticipantModal';
 
 export const StudentCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }) => {
-  const { courses, students } = useQuantumDB();
+  const { courses, students, deleteRecord, removeCourseCompletion } = useQuantumDB();
   const [selectedCourseId, setSelectedCourseId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [studentSearch, setStudentSearch] = useState('');
@@ -124,9 +124,22 @@ export const StudentCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }
               </p>
             </div>
 
-            <button className="btn btn-outline" onClick={handleDownloadRoster}>
-              <Download size={16} /> Download Student Roster PDF
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button className="btn btn-outline" onClick={handleDownloadRoster}>
+                <Download size={16} /> Download Student Roster PDF
+              </button>
+              <button
+                className="btn btn-danger"
+                onClick={() => {
+                  if (window.confirm(`Are you sure you want to delete course "${selectedCourse.name}"?`)) {
+                    deleteRecord('courses', selectedCourse.id);
+                    setSelectedCourseId(null);
+                  }
+                }}
+              >
+                <Trash2 size={15} /> Delete Course
+              </button>
+            </div>
           </div>
 
           {/* Highlight Metrics */}
@@ -232,12 +245,13 @@ export const StudentCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }
                 <th>Grade / Distinction</th>
                 <th style={{ textAlign: 'center' }}>Certificate</th>
                 <th style={{ textAlign: 'center' }}>Profile</th>
+                <th style={{ textAlign: 'center' }}>Action</th>
               </tr>
             </thead>
             <tbody>
               {completedStudentList.length === 0 ? (
                 <tr>
-                  <td colSpan="8" style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                  <td colSpan="9" style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
                     No student completion records matching search.
                   </td>
                 </tr>
@@ -310,6 +324,19 @@ export const StudentCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }
                         onClick={() => onOpenProfile(item.student.id, 'student')}
                       >
                         <User size={14} /> View Profile
+                      </button>
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <button
+                        className="btn-icon-danger"
+                        title="Remove student from course"
+                        onClick={() => {
+                          if (window.confirm(`Remove ${item.student.name} from this course completion roster?`)) {
+                            removeCourseCompletion(selectedCourse.id, 'students', item.student.id);
+                          }
+                        }}
+                      >
+                        <Trash2 size={14} />
                       </button>
                     </td>
                   </tr>
@@ -412,18 +439,32 @@ export const StudentCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }
             const completedCount = (course.studentCompletions || []).length;
             const enrolledCount = (course.studentEnrolled || []).length;
             const totalPool = students.length || 6;
-            const completionPct = Math.round((completedCount / totalPool) * 100);
+            const completionPct = Math.round((completedCount / (totalPool || 1)) * 100);
 
             return (
               <div
                 key={course.id}
                 className="item-card"
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer', position: 'relative' }}
                 onClick={() => setSelectedCourseId(course.id)}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                   <span className="metric-pill primary">{course.code}</span>
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>{course.provider}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>{course.provider}</span>
+                    <button
+                      className="btn-icon-danger"
+                      title="Delete Course"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`Are you sure you want to delete course "${course.name}"?`)) {
+                          deleteRecord('courses', course.id);
+                        }
+                      }}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
                 </div>
 
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem', lineHeight: 1.35 }}>

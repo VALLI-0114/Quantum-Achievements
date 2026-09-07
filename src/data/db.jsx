@@ -183,7 +183,7 @@ export const QuantumDBProvider = ({ children }) => {
     }));
   };
 
-  // 7. Delete Record
+  // 7. Delete Entity Record
   const deleteRecord = (category, id) => {
     setData(prev => {
       if (category === 'faculty') return { ...prev, faculty: prev.faculty.filter(f => f.id !== id) };
@@ -191,13 +191,118 @@ export const QuantumDBProvider = ({ children }) => {
       if (category === 'courses') return { ...prev, courses: prev.courses.filter(c => c.id !== id) };
       if (category === 'certificates') return { ...prev, certificates: prev.certificates.filter(c => c.id !== id) };
       if (category === 'projects') return { ...prev, projects: prev.projects.filter(p => p.id !== id) };
-      if (category === 'papers') return { ...prev, researchPapers: prev.researchPapers.filter(p => p.id !== id) };
+      if (category === 'papers' || category === 'researchPapers') return { ...prev, researchPapers: prev.researchPapers.filter(p => p.id !== id) };
       if (category === 'hackathons') return { ...prev, hackathons: prev.hackathons.filter(h => h.id !== id) };
       return prev;
     });
   };
 
-  // 8. Export & Reset
+  // 8. Delete Participant from Course Roster
+  const removeCourseCompletion = (courseId, audienceType, personId) => {
+    setData(prev => ({
+      ...prev,
+      courses: prev.courses.map(c => {
+        if (c.id !== courseId) return c;
+        if (audienceType === 'faculty') {
+          return {
+            ...c,
+            facultyCompletions: (c.facultyCompletions || []).filter(fc => fc.facultyId !== personId)
+          };
+        } else {
+          return {
+            ...c,
+            studentCompletions: (c.studentCompletions || []).filter(sc => sc.studentId !== personId)
+          };
+        }
+      })
+    }));
+  };
+
+  // 9. Delete Recipient from Certificate
+  const removeCertificateRecipient = (certId, audienceType, personId) => {
+    setData(prev => ({
+      ...prev,
+      certificates: prev.certificates.map(c => {
+        if (c.id !== certId) return c;
+        if (audienceType === 'faculty') {
+          return {
+            ...c,
+            facultyRecipients: (c.facultyRecipients || []).filter(fr => fr.facultyId !== personId)
+          };
+        } else {
+          return {
+            ...c,
+            studentRecipients: (c.studentRecipients || []).filter(sr => sr.studentId !== personId)
+          };
+        }
+      })
+    }));
+  };
+
+  // 10. Delete Participant from Project
+  const removeProjectParticipant = (projectId, roleType, personId) => {
+    setData(prev => ({
+      ...prev,
+      projects: prev.projects.map(p => {
+        if (p.id !== projectId) return p;
+        if (roleType === 'faculty') {
+          return {
+            ...p,
+            facultyInvolved: (p.facultyInvolved || []).filter(fi => fi.facultyId !== personId)
+          };
+        } else {
+          return {
+            ...p,
+            studentsInvolved: (p.studentsInvolved || []).filter(si => si.studentId !== personId)
+          };
+        }
+      })
+    }));
+  };
+
+  // 11. Delete Author from Paper
+  const removePaperAuthor = (paperId, roleType, personId) => {
+    setData(prev => ({
+      ...prev,
+      researchPapers: prev.researchPapers.map(rp => {
+        if (rp.id !== paperId) return rp;
+        if (roleType === 'faculty') {
+          return {
+            ...rp,
+            facultyAuthors: (rp.facultyAuthors || []).filter(fa => fa.facultyId !== personId)
+          };
+        } else {
+          return {
+            ...rp,
+            studentAuthors: (rp.studentAuthors || []).filter(sa => sa.studentId !== personId)
+          };
+        }
+      })
+    }));
+  };
+
+  // 12. Delete Participant from Hackathon
+  const removeHackathonParticipant = (hackathonId, roleType, personId) => {
+    setData(prev => ({
+      ...prev,
+      hackathons: prev.hackathons.map(h => {
+        if (h.id !== hackathonId) return h;
+        if (roleType === 'faculty') {
+          return {
+            ...h,
+            facultyParticipants: (h.facultyParticipants || []).filter(fp => fp.facultyId !== personId)
+          };
+        } else {
+          return {
+            ...h,
+            studentParticipants: (h.studentParticipants || []).filter(sp => sp.studentId !== personId)
+          };
+        }
+      })
+    }));
+  };
+
+  // 13. Export & Reset
   const exportJSON = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
     const dlAnchorElem = document.createElement('a');
@@ -243,6 +348,11 @@ export const QuantumDBProvider = ({ children }) => {
       addFaculty,
       addStudent,
       deleteRecord,
+      removeCourseCompletion,
+      removeCertificateRecipient,
+      removeProjectParticipant,
+      removePaperAuthor,
+      removeHackathonParticipant,
       exportJSON,
       resetSeedData
     }}>

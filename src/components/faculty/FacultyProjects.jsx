@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Layers, ArrowLeft, Search, User, ExternalLink, Code2, CheckCircle2, FileDown, Download } from 'lucide-react';
+import { Layers, ArrowLeft, Search, User, ExternalLink, Code2, CheckCircle2, FileDown, Download, Trash2, Plus } from 'lucide-react';
 import { useQuantumDB } from '../../data/db';
 import { downloadCategoryReportPDF, downloadProjectReportPDF } from '../../utils/pdfGenerator';
 
 export const FacultyProjects = ({ onOpenProfile, onAddProject }) => {
-  const { projects, faculty, students } = useQuantumDB();
+  const { projects, faculty, students, deleteRecord, removeProjectParticipant } = useQuantumDB();
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -115,9 +115,20 @@ export const FacultyProjects = ({ onOpenProfile, onAddProject }) => {
                   className="btn btn-outline"
                   style={{ textDecoration: 'none' }}
                 >
-                  <Code2 size={16} /> Repository
+                  <Code2 size={16} /> Repository <ExternalLink size={14} />
                 </a>
               )}
+              <button
+                className="btn btn-danger"
+                onClick={() => {
+                  if (window.confirm(`Are you sure you want to delete project "${selectedProject.title}"?`)) {
+                    deleteRecord('projects', selectedProject.id);
+                    setSelectedProjectId(null);
+                  }
+                }}
+              >
+                <Trash2 size={15} /> Delete Project
+              </button>
             </div>
           </div>
         </div>
@@ -152,12 +163,25 @@ export const FacultyProjects = ({ onOpenProfile, onAddProject }) => {
                     </div>
                   </div>
 
-                  <button
-                    className="btn btn-outline btn-sm"
-                    onClick={() => onOpenProfile(item.faculty.id, 'faculty')}
-                  >
-                    <User size={14} /> Profile
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <button
+                      className="btn btn-outline btn-sm"
+                      onClick={() => onOpenProfile(item.faculty.id, 'faculty')}
+                    >
+                      <User size={14} /> Profile
+                    </button>
+                    <button
+                      className="btn-icon-danger"
+                      title="Remove faculty from project"
+                      onClick={() => {
+                        if (window.confirm(`Remove ${item.faculty.name} from project?`)) {
+                          removeProjectParticipant(selectedProject.id, 'faculty', item.faculty.id);
+                        }
+                      }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
 
                 <div style={{
@@ -191,12 +215,25 @@ export const FacultyProjects = ({ onOpenProfile, onAddProject }) => {
                         {item.student.studentId} • {item.student.department}
                       </div>
                     </div>
-                    <button
-                      className="btn btn-outline btn-sm"
-                      onClick={() => onOpenProfile(item.student.id, 'student')}
-                    >
-                      <User size={14} /> Profile
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <button
+                        className="btn btn-outline btn-sm"
+                        onClick={() => onOpenProfile(item.student.id, 'student')}
+                      >
+                        <User size={14} /> Profile
+                      </button>
+                      <button
+                        className="btn-icon-danger"
+                        title="Remove student from project"
+                        onClick={() => {
+                          if (window.confirm(`Remove ${item.student.name} from project?`)) {
+                            removeProjectParticipant(selectedProject.id, 'students', item.student.id);
+                          }
+                        }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
                   <div style={{
                     marginTop: '0.75rem',
@@ -235,7 +272,7 @@ export const FacultyProjects = ({ onOpenProfile, onAddProject }) => {
             <FileDown size={15} /> Download Projects PDF
           </button>
           <button className="btn btn-secondary" onClick={onAddProject}>
-            ➕ Add Project
+            <Plus size={16} /> Add Project
           </button>
         </div>
       </div>
@@ -264,12 +301,26 @@ export const FacultyProjects = ({ onOpenProfile, onAddProject }) => {
               <div
                 key={project.id}
                 className="item-card"
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer', position: 'relative' }}
                 onClick={() => setSelectedProjectId(project.id)}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                   <span className="metric-pill secondary">{project.domain}</span>
-                  <span className="metric-pill success">{project.status}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span className="metric-pill success">{project.status}</span>
+                    <button
+                      className="btn-icon-danger"
+                      title="Delete Project"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`Are you sure you want to delete project "${project.title}"?`)) {
+                          deleteRecord('projects', project.id);
+                        }
+                      }}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
                 </div>
 
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>

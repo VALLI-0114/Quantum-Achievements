@@ -647,6 +647,28 @@ body {
   color: #FFFFFF;
 }
 
+.btn-icon-danger {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid var(--accent-rose-border);
+  background: var(--accent-rose-light);
+  color: var(--accent-rose);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-icon-danger:hover {
+  background: var(--accent-rose);
+  color: #FFFFFF;
+  border-color: var(--accent-rose);
+  transform: scale(1.08);
+}
+
 /* Modals */
 .modal-overlay {
   position: fixed;

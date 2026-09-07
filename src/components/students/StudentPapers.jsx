@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { FileText, ArrowLeft, Search, User, FileDown, Download } from 'lucide-react';
+import { FileText, ArrowLeft, Search, User, FileDown, Download, Trash2 } from 'lucide-react';
 import { useQuantumDB } from '../../data/db';
 import { downloadCategoryReportPDF, downloadPaperReportPDF } from '../../utils/pdfGenerator';
 
 export const StudentPapers = ({ onOpenProfile, onAddPaper }) => {
-  const { researchPapers, students, faculty } = useQuantumDB();
+  const { researchPapers, students, faculty, deleteRecord, removePaperAuthor } = useQuantumDB();
   const [selectedPaperId, setSelectedPaperId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -34,11 +34,11 @@ export const StudentPapers = ({ onOpenProfile, onAddPaper }) => {
 
   if (selectedPaper) {
     const stuAuthors = (selectedPaper.studentAuthors || []).map(sid => {
-      return students.find(s => s.id === sid) || { name: "Student Author", department: "Information Technology", studentId: "QU-2023" };
+      return students.find(s => s.id === sid) || { id: sid, name: "Student Author", department: "Information Technology", studentId: "QU-2023" };
     });
 
     const facMentors = (selectedPaper.facultyAuthors || []).map(fid => {
-      return faculty.find(f => f.id === fid) || { name: "Dr. Faculty Mentor", department: "Physics" };
+      return faculty.find(f => f.id === fid) || { id: fid, name: "Dr. Faculty Mentor", department: "Physics" };
     });
 
     const handleDownloadSinglePaperPDF = () => {
@@ -84,9 +84,22 @@ export const StudentPapers = ({ onOpenProfile, onAddPaper }) => {
               </div>
             </div>
 
-            <button className="btn btn-outline" onClick={handleDownloadSinglePaperPDF}>
-              <Download size={16} /> Download Paper PDF
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button className="btn btn-outline" onClick={handleDownloadSinglePaperPDF}>
+                <Download size={16} /> Download Paper PDF
+              </button>
+              <button
+                className="btn btn-danger"
+                onClick={() => {
+                  if (window.confirm(`Are you sure you want to delete "${selectedPaper.title}"?`)) {
+                    deleteRecord('researchPapers', selectedPaper.id);
+                    setSelectedPaperId(null);
+                  }
+                }}
+              >
+                <Trash2 size={16} /> Delete Paper
+              </button>
+            </div>
           </div>
 
           <div style={{
@@ -138,9 +151,22 @@ export const StudentPapers = ({ onOpenProfile, onAddPaper }) => {
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{s.studentId} • {s.department}</div>
                     </div>
                   </div>
-                  <button className="btn btn-outline btn-sm" onClick={() => onOpenProfile(s.id, 'student')}>
-                    <User size={14} /> Profile
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <button className="btn btn-outline btn-sm" onClick={() => onOpenProfile(s.id, 'student')}>
+                      <User size={14} /> Profile
+                    </button>
+                    <button
+                      className="btn-icon-danger"
+                      title="Remove Student Author"
+                      onClick={() => {
+                        if (window.confirm(`Remove ${s.name} from this paper?`)) {
+                          removePaperAuthor(selectedPaper.id, 'student', s.id);
+                        }
+                      }}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -160,9 +186,22 @@ export const StudentPapers = ({ onOpenProfile, onAddPaper }) => {
                         <strong style={{ fontSize: '0.95rem' }}>{f.name}</strong>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{f.department}</div>
                       </div>
-                      <button className="btn btn-outline btn-sm" onClick={() => onOpenProfile(f.id, 'faculty')}>
-                        <User size={14} /> Profile
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <button className="btn btn-outline btn-sm" onClick={() => onOpenProfile(f.id, 'faculty')}>
+                          <User size={14} /> Profile
+                        </button>
+                        <button
+                          className="btn-icon-danger"
+                          title="Remove Faculty Mentor"
+                          onClick={() => {
+                            if (window.confirm(`Remove ${f.name} from this paper?`)) {
+                              removePaperAuthor(selectedPaper.id, 'faculty', f.id);
+                            }
+                          }}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -181,7 +220,7 @@ export const StudentPapers = ({ onOpenProfile, onAddPaper }) => {
           <Search size={16} style={{ color: 'var(--text-muted)' }} />
           <input
             type="text"
-            placeholder="Search student research papers by title or venue..."
+            placeholder="Search student research papers by topic, venue, or keywords..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -209,7 +248,7 @@ export const StudentPapers = ({ onOpenProfile, onAddPaper }) => {
           }}>
             <FileText size={44} style={{ color: 'var(--text-muted)', marginBottom: '0.75rem' }} />
             <h3 style={{ fontSize: '1.15rem', color: 'var(--text-primary)', marginBottom: '0.35rem', fontWeight: 700 }}>No Research Papers Found</h3>
-            <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>Start by indexing a quantum research paper authored by students.</p>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>Start by indexing a student quantum research paper publication.</p>
             <button className="btn btn-primary" onClick={onAddPaper}>➕ Add Research Paper</button>
           </div>
         ) : (
@@ -226,7 +265,21 @@ export const StudentPapers = ({ onOpenProfile, onAddPaper }) => {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                   <span className="metric-pill primary">{paper.researchArea}</span>
-                  <span className="metric-pill secondary">{paper.citations || 0} Citations</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span className="metric-pill secondary">{paper.citations || 0} Citations</span>
+                    <button
+                      className="btn-icon-danger"
+                      title="Delete Research Paper"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`Are you sure you want to delete "${paper.title}"?`)) {
+                          deleteRecord('researchPapers', paper.id);
+                        }
+                      }}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                 </div>
 
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
@@ -249,7 +302,7 @@ export const StudentPapers = ({ onOpenProfile, onAddPaper }) => {
                   borderTop: '1px solid var(--border-light)'
                 }}>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    Student Authors: <strong>{stuCount} Students</strong> • Mentors: <strong>{facCount} Faculty</strong>
+                    Authors: <strong>{stuCount} Students</strong> • <strong>{facCount} Faculty</strong>
                   </span>
                   <span className="btn btn-outline btn-sm">
                     View Paper & Authors →

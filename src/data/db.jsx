@@ -48,18 +48,27 @@ export const QuantumDBProvider = ({ children }) => {
   const getStudentById = (id) => data.students.find(s => s.id === id);
 
   // 1. Course Management & Completion Add
-  const addCourse = (newCourse) => {
-    setData(prev => ({
-      ...prev,
-      courses: [{
-        ...newCourse,
-        id: newCourse.id || `CRS-${Date.now().toString().slice(-4)}`,
-        facultyCompletions: newCourse.facultyCompletions || [],
-        facultyEnrolled: newCourse.facultyEnrolled || [],
-        studentCompletions: newCourse.studentCompletions || [],
-        studentEnrolled: newCourse.studentEnrolled || []
-      }, ...prev.courses]
-    }));
+  const addCourse = (newCourse, newFacultyList = [], newStudentsList = []) => {
+    setData(prev => {
+      const existingFacIds = new Set(prev.faculty.map(f => f.id));
+      const existingStuIds = new Set(prev.students.map(s => s.id));
+      const filteredNewFac = newFacultyList.filter(f => f && f.id && !existingFacIds.has(f.id));
+      const filteredNewStu = newStudentsList.filter(s => s && s.id && !existingStuIds.has(s.id));
+
+      return {
+        ...prev,
+        faculty: [...filteredNewFac, ...prev.faculty],
+        students: [...filteredNewStu, ...prev.students],
+        courses: [{
+          ...newCourse,
+          id: newCourse.id || `CRS-${Date.now().toString().slice(-4)}`,
+          facultyCompletions: newCourse.facultyCompletions || [],
+          facultyEnrolled: newCourse.facultyEnrolled || [],
+          studentCompletions: newCourse.studentCompletions || [],
+          studentEnrolled: newCourse.studentEnrolled || []
+        }, ...prev.courses]
+      };
+    });
   };
 
   const addCourseCompletion = (courseId, audienceType, personId, record) => {
@@ -89,16 +98,25 @@ export const QuantumDBProvider = ({ children }) => {
   };
 
   // 2. Certificate Management
-  const addCertificate = (newCert) => {
-    setData(prev => ({
-      ...prev,
-      certificates: [{
-        ...newCert,
-        id: newCert.id || `CERT-NEW-${Date.now().toString().slice(-4)}`,
-        facultyRecipients: newCert.facultyRecipients || [],
-        studentRecipients: newCert.studentRecipients || []
-      }, ...prev.certificates]
-    }));
+  const addCertificate = (newCert, newFacultyList = [], newStudentsList = []) => {
+    setData(prev => {
+      const existingFacIds = new Set(prev.faculty.map(f => f.id));
+      const existingStuIds = new Set(prev.students.map(s => s.id));
+      const filteredNewFac = newFacultyList.filter(f => f && f.id && !existingFacIds.has(f.id));
+      const filteredNewStu = newStudentsList.filter(s => s && s.id && !existingStuIds.has(s.id));
+
+      return {
+        ...prev,
+        faculty: [...filteredNewFac, ...prev.faculty],
+        students: [...filteredNewStu, ...prev.students],
+        certificates: [{
+          ...newCert,
+          id: newCert.id || `CERT-NEW-${Date.now().toString().slice(-4)}`,
+          facultyRecipients: newCert.facultyRecipients || [],
+          studentRecipients: newCert.studentRecipients || []
+        }, ...prev.certificates]
+      };
+    });
   };
 
   const addCertificateRecipient = (certId, audienceType, personId, record) => {
@@ -122,42 +140,69 @@ export const QuantumDBProvider = ({ children }) => {
   };
 
   // 3. Project Management
-  const addProject = (newProject) => {
-    setData(prev => ({
-      ...prev,
-      projects: [{
-        ...newProject,
-        id: newProject.id || `PRJ-${Date.now().toString().slice(-4)}`,
-        facultyInvolved: newProject.facultyInvolved || [],
-        studentsInvolved: newProject.studentsInvolved || []
-      }, ...prev.projects]
-    }));
+  const addProject = (newProject, newFacultyList = [], newStudentsList = []) => {
+    setData(prev => {
+      const existingFacIds = new Set(prev.faculty.map(f => f.id));
+      const existingStuIds = new Set(prev.students.map(s => s.id));
+      const filteredNewFac = newFacultyList.filter(f => f && f.id && !existingFacIds.has(f.id));
+      const filteredNewStu = newStudentsList.filter(s => s && s.id && !existingStuIds.has(s.id));
+
+      return {
+        ...prev,
+        faculty: [...filteredNewFac, ...prev.faculty],
+        students: [...filteredNewStu, ...prev.students],
+        projects: [{
+          ...newProject,
+          id: newProject.id || `PRJ-${Date.now().toString().slice(-4)}`,
+          facultyInvolved: newProject.facultyInvolved || [],
+          studentsInvolved: newProject.studentsInvolved || []
+        }, ...prev.projects]
+      };
+    });
   };
 
   // 4. Research Paper Management
-  const addResearchPaper = (newPaper) => {
-    setData(prev => ({
-      ...prev,
-      researchPapers: [{
-        ...newPaper,
-        id: newPaper.id || `PUB-${Date.now().toString().slice(-4)}`,
-        facultyAuthors: newPaper.facultyAuthors || [],
-        studentAuthors: newPaper.studentAuthors || []
-      }, ...prev.researchPapers]
-    }));
+  const addResearchPaper = (newPaper, newFacultyList = [], newStudentsList = []) => {
+    setData(prev => {
+      const existingFacIds = new Set(prev.faculty.map(f => f.id));
+      const existingStuIds = new Set(prev.students.map(s => s.id));
+      const filteredNewFac = newFacultyList.filter(f => f && f.id && !existingFacIds.has(f.id));
+      const filteredNewStu = newStudentsList.filter(s => s && s.id && !existingStuIds.has(s.id));
+
+      return {
+        ...prev,
+        faculty: [...filteredNewFac, ...prev.faculty],
+        students: [...filteredNewStu, ...prev.students],
+        researchPapers: [{
+          ...newPaper,
+          id: newPaper.id || `PUB-${Date.now().toString().slice(-4)}`,
+          facultyAuthors: newPaper.facultyAuthors || [],
+          studentAuthors: newPaper.studentAuthors || []
+        }, ...prev.researchPapers]
+      };
+    });
   };
 
   // 5. Hackathon Management
-  const addHackathon = (newHackathon) => {
-    setData(prev => ({
-      ...prev,
-      hackathons: [{
-        ...newHackathon,
-        id: newHackathon.id || `HCK-${Date.now().toString().slice(-4)}`,
-        facultyParticipants: newHackathon.facultyParticipants || [],
-        studentParticipants: newHackathon.studentParticipants || []
-      }, ...prev.hackathons]
-    }));
+  const addHackathon = (newHackathon, newFacultyList = [], newStudentsList = []) => {
+    setData(prev => {
+      const existingFacIds = new Set(prev.faculty.map(f => f.id));
+      const existingStuIds = new Set(prev.students.map(s => s.id));
+      const filteredNewFac = newFacultyList.filter(f => f && f.id && !existingFacIds.has(f.id));
+      const filteredNewStu = newStudentsList.filter(s => s && s.id && !existingStuIds.has(s.id));
+
+      return {
+        ...prev,
+        faculty: [...filteredNewFac, ...prev.faculty],
+        students: [...filteredNewStu, ...prev.students],
+        hackathons: [{
+          ...newHackathon,
+          id: newHackathon.id || `HCK-${Date.now().toString().slice(-4)}`,
+          facultyParticipants: newHackathon.facultyParticipants || [],
+          studentParticipants: newHackathon.studentParticipants || []
+        }, ...prev.hackathons]
+      };
+    });
   };
 
   // 6. Person (Faculty / Student) Management

@@ -1,5 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, BookOpen, Award, Layers, FileText, Trophy, Sparkles, UploadCloud, FileCheck, Paperclip } from 'lucide-react';
+import {
+  X,
+  Plus,
+  BookOpen,
+  Award,
+  Layers,
+  FileText,
+  Trophy,
+  UploadCloud,
+  FileCheck,
+  User,
+  Users,
+  Trash2,
+  Sparkles,
+  UserPlus
+} from 'lucide-react';
 import { useQuantumDB } from '../../data/db';
 
 export const AddAchievementModal = ({
@@ -36,26 +51,30 @@ export const AddAchievementModal = ({
     provider: 'IBM Quantum Network & Q-HUB',
     category: 'Quantum Algorithms',
     description: '',
-    selectedPersonId: '',
+    completerName: '',
+    completerDept: 'Computer Science & Engineering',
+    completerId: '',
     completionDate: new Date().toISOString().slice(0, 10),
-    grade: 'Distinction',
+    grade: 'Distinction / 98%',
     uploadedFile: null
   });
 
-  // 2. Certificate State (with file upload)
+  // 2. Certificate State
   const [certForm, setCertForm] = useState({
     title: '',
     issuer: 'IBM Quantum & Q-HUB',
     code: 'QISKIT-PRO-2026',
     verificationUrl: 'https://www.credly.com',
-    selectedPersonId: '',
+    recipientName: '',
+    recipientDept: 'Computer Science & Engineering',
+    recipientId: '',
     issueDate: new Date().toISOString().slice(0, 10),
     credentialId: `QHUB-CERT-${Math.floor(100000 + Math.random() * 900000)}`,
-    score: 'Mastery',
+    score: 'Mastery / 95%',
     uploadedFile: null
   });
 
-  // 3. Project State
+  // 3. Project State with Leader and Teammates
   const [projectForm, setProjectForm] = useState({
     title: '',
     domain: 'Quantum Machine Learning',
@@ -63,8 +82,17 @@ export const AddAchievementModal = ({
     description: '',
     status: 'Active Development',
     githubUrl: 'https://github.com/quantum-hub',
-    leadFacultyId: 'FAC-001',
-    leadStudentId: 'STU-001',
+    // Student Leader
+    leadStudentName: '',
+    leadStudentRoll: '',
+    leadStudentDept: 'Computer Science & Engineering',
+    leadStudentRole: 'Project Lead & Quantum Developer',
+    // Faculty Advisor
+    facultyLeadName: '',
+    facultyLeadDept: 'Department of Physics & Quantum Science',
+    facultyLeadRole: 'Principal Investigator / Research Advisor',
+    // Dynamic Teammates list
+    teammates: [],
     uploadedFile: null
   });
 
@@ -77,8 +105,15 @@ export const AddAchievementModal = ({
     abstract: '',
     citations: 0,
     date: new Date().toISOString().slice(0, 10),
-    facultyAuthorId: 'FAC-001',
-    studentAuthorId: 'STU-001'
+    // Primary Faculty Author
+    facultyAuthorName: '',
+    facultyAuthorDept: 'Physics & Quantum Computing',
+    // Primary Student Author
+    studentAuthorName: '',
+    studentAuthorRoll: '',
+    studentAuthorDept: 'Computer Science & Engineering',
+    // Additional Co-authors
+    additionalAuthors: []
   });
 
   // 5. Hackathon State
@@ -90,9 +125,79 @@ export const AddAchievementModal = ({
     teamName: '',
     projectBuilt: '',
     award: '🏆 1st Place - Quantum Computing Challenge',
-    selectedPersonId: '',
-    repoUrl: 'https://github.com/quantum-hub'
+    // Team Leader
+    leadName: '',
+    leadId: '',
+    leadDept: 'Computer Science & Engineering',
+    // Dynamic Teammates
+    teammates: [],
+    repoUrl: 'https://github.com/quantum-hub',
+    uploadedFile: null
   });
+
+  // Helper to add a teammate in Project
+  const handleAddProjectTeammate = () => {
+    setProjectForm(prev => ({
+      ...prev,
+      teammates: [
+        ...prev.teammates,
+        {
+          id: `tmp-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+          name: '',
+          studentId: '',
+          department: 'Computer Science & Engineering',
+          role: 'Quantum Algorithm Developer'
+        }
+      ]
+    }));
+  };
+
+  const handleUpdateProjectTeammate = (index, field, value) => {
+    setProjectForm(prev => {
+      const updated = [...prev.teammates];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, teammates: updated };
+    });
+  };
+
+  const handleRemoveProjectTeammate = (index) => {
+    setProjectForm(prev => ({
+      ...prev,
+      teammates: prev.teammates.filter((_, idx) => idx !== index)
+    }));
+  };
+
+  // Helper to add a teammate in Hackathon
+  const handleAddHackathonTeammate = () => {
+    setHackathonForm(prev => ({
+      ...prev,
+      teammates: [
+        ...prev.teammates,
+        {
+          id: `tmp-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+          name: '',
+          studentId: '',
+          department: 'Computer Science & Engineering',
+          role: 'Team Member'
+        }
+      ]
+    }));
+  };
+
+  const handleUpdateHackathonTeammate = (index, field, value) => {
+    setHackathonForm(prev => {
+      const updated = [...prev.teammates];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, teammates: updated };
+    });
+  };
+
+  const handleRemoveHackathonTeammate = (index) => {
+    setHackathonForm(prev => ({
+      ...prev,
+      teammates: prev.teammates.filter((_, idx) => idx !== index)
+    }));
+  };
 
   // File upload handler
   const handleFileUpload = (formType, file) => {
@@ -130,8 +235,57 @@ export const AddAchievementModal = ({
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    const newFacultyList = [];
+    const newStudentsList = [];
+
+    const getOrMakeStudent = (name, dept, roll, email) => {
+      if (!name || !name.trim()) return null;
+      const cleanName = name.trim();
+      const existing = students.find(s => s.name.toLowerCase() === cleanName.toLowerCase());
+      if (existing) return existing.id;
+      const newId = `STU-${Date.now().toString().slice(-4)}-${Math.floor(100 + Math.random() * 900)}`;
+      const newStudent = {
+        id: newId,
+        name: cleanName,
+        studentId: roll || `QU-${Math.floor(1000 + Math.random() * 9000)}`,
+        department: dept || 'Computer Science & Engineering',
+        email: email || `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '')}@student.quantum.edu`,
+        avatar: cleanName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+      };
+      newStudentsList.push(newStudent);
+      return newId;
+    };
+
+    const getOrMakeFaculty = (name, dept, title, email) => {
+      if (!name || !name.trim()) return null;
+      const cleanName = name.trim();
+      const existing = faculty.find(f => f.name.toLowerCase() === cleanName.toLowerCase());
+      if (existing) return existing.id;
+      const newId = `FAC-${Date.now().toString().slice(-4)}-${Math.floor(100 + Math.random() * 900)}`;
+      const newFac = {
+        id: newId,
+        name: cleanName,
+        title: title || 'Faculty Researcher & Mentor',
+        department: dept || 'Physics & Quantum Computing',
+        email: email || `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '')}@faculty.quantum.edu`,
+        avatar: cleanName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+      };
+      newFacultyList.push(newFac);
+      return newId;
+    };
+
     if (activeTab === 'courses') {
       if (!courseForm.name) return alert('Please enter the course name');
+
+      let completerId = null;
+      if (courseForm.completerName) {
+        if (audience === 'faculty') {
+          completerId = getOrMakeFaculty(courseForm.completerName, courseForm.completerDept, 'Faculty Member');
+        } else {
+          completerId = getOrMakeStudent(courseForm.completerName, courseForm.completerDept, courseForm.completerId);
+        }
+      }
+
       const newCourseId = `CRS-${Date.now().toString().slice(-4)}`;
       const newCourse = {
         id: newCourseId,
@@ -141,16 +295,18 @@ export const AddAchievementModal = ({
         category: courseForm.category,
         description: courseForm.description,
         uploadedFile: courseForm.uploadedFile,
-        facultyCompletions: audience === 'faculty' && courseForm.selectedPersonId ? [{
-          facultyId: courseForm.selectedPersonId,
+        facultyCompletions: audience === 'faculty' && completerId ? [{
+          facultyId: completerId,
+          facultyName: courseForm.completerName,
           completionDate: courseForm.completionDate,
           certificateId: `CERT-${Date.now().toString().slice(-4)}`,
           grade: courseForm.grade,
           uploadedFile: courseForm.uploadedFile
         }] : [],
         facultyEnrolled: [],
-        studentCompletions: audience === 'students' && courseForm.selectedPersonId ? [{
-          studentId: courseForm.selectedPersonId,
+        studentCompletions: audience === 'students' && completerId ? [{
+          studentId: completerId,
+          studentName: courseForm.completerName,
           completionDate: courseForm.completionDate,
           certificateId: `CERT-${Date.now().toString().slice(-4)}`,
           grade: courseForm.grade,
@@ -158,10 +314,20 @@ export const AddAchievementModal = ({
         }] : [],
         studentEnrolled: []
       };
-      addCourse(newCourse);
+      addCourse(newCourse, newFacultyList, newStudentsList);
       alert(`Quantum Course achievement added to ${audience === 'faculty' ? 'Faculty' : 'Student'} section!`);
     } else if (activeTab === 'certificates') {
       if (!certForm.title) return alert('Please enter the certificate title');
+
+      let recipientId = null;
+      if (certForm.recipientName) {
+        if (audience === 'faculty') {
+          recipientId = getOrMakeFaculty(certForm.recipientName, certForm.recipientDept, 'Certified Faculty Researcher');
+        } else {
+          recipientId = getOrMakeStudent(certForm.recipientName, certForm.recipientDept, certForm.recipientId);
+        }
+      }
+
       const newCert = {
         id: `CERT-${Date.now().toString().slice(-4)}`,
         title: certForm.title,
@@ -169,39 +335,107 @@ export const AddAchievementModal = ({
         code: certForm.code,
         verificationUrl: certForm.verificationUrl,
         uploadedFile: certForm.uploadedFile,
-        facultyRecipients: audience === 'faculty' && certForm.selectedPersonId ? [{
-          facultyId: certForm.selectedPersonId,
+        facultyRecipients: audience === 'faculty' && recipientId ? [{
+          facultyId: recipientId,
+          facultyName: certForm.recipientName,
           issueDate: certForm.issueDate,
           credentialId: certForm.credentialId,
           score: certForm.score,
           uploadedFile: certForm.uploadedFile
         }] : [],
-        studentRecipients: audience === 'students' && certForm.selectedPersonId ? [{
-          studentId: certForm.selectedPersonId,
+        studentRecipients: audience === 'students' && recipientId ? [{
+          studentId: recipientId,
+          studentName: certForm.recipientName,
           issueDate: certForm.issueDate,
           credentialId: certForm.credentialId,
           score: certForm.score,
           uploadedFile: certForm.uploadedFile
         }] : []
       };
-      addCertificate(newCert);
-      alert(`Certificate achievement ${certForm.uploadedFile ? 'with uploaded certificate document' : ''} added to ${audience === 'faculty' ? 'Faculty' : 'Student'} section!`);
+      addCertificate(newCert, newFacultyList, newStudentsList);
+      alert(`Certificate achievement added to ${audience === 'faculty' ? 'Faculty' : 'Student'} section!`);
     } else if (activeTab === 'projects') {
       if (!projectForm.title) return alert('Please enter project title');
+
+      // Process Faculty Lead
+      const facInvolved = [];
+      if (projectForm.facultyLeadName && projectForm.facultyLeadName.trim()) {
+        const facId = getOrMakeFaculty(
+          projectForm.facultyLeadName,
+          projectForm.facultyLeadDept,
+          'Research Advisor'
+        );
+        if (facId) {
+          facInvolved.push({
+            facultyId: facId,
+            facultyName: projectForm.facultyLeadName.trim(),
+            role: projectForm.facultyLeadRole || 'Research Advisor & PI',
+            department: projectForm.facultyLeadDept
+          });
+        }
+      }
+
+      // Process Student Lead & Teammates
+      const stuInvolved = [];
+      if (projectForm.leadStudentName && projectForm.leadStudentName.trim()) {
+        const leadStuId = getOrMakeStudent(
+          projectForm.leadStudentName,
+          projectForm.leadStudentDept,
+          projectForm.leadStudentRoll
+        );
+        if (leadStuId) {
+          stuInvolved.push({
+            studentId: leadStuId,
+            studentName: projectForm.leadStudentName.trim(),
+            role: projectForm.leadStudentRole || 'Project Lead',
+            department: projectForm.leadStudentDept
+          });
+        }
+      }
+
+      // Process additional teammates
+      (projectForm.teammates || []).forEach(t => {
+        if (t.name && t.name.trim()) {
+          const tId = getOrMakeStudent(t.name, t.department, t.studentId);
+          if (tId) {
+            stuInvolved.push({
+              studentId: tId,
+              studentName: t.name.trim(),
+              role: t.role || 'Quantum Developer',
+              department: t.department
+            });
+          }
+        }
+      });
+
       addProject({
         title: projectForm.title,
         domain: projectForm.domain,
-        techStack: projectForm.techStack.split(',').map(s => s.trim()),
+        techStack: projectForm.techStack.split(',').map(s => s.trim()).filter(Boolean),
         description: projectForm.description,
         status: projectForm.status,
         githubUrl: projectForm.githubUrl,
         uploadedFile: projectForm.uploadedFile,
-        facultyInvolved: projectForm.leadFacultyId ? [{ facultyId: projectForm.leadFacultyId, role: 'Principal Investigator' }] : [],
-        studentsInvolved: projectForm.leadStudentId ? [{ studentId: projectForm.leadStudentId, role: 'Lead Developer' }] : []
-      });
-      alert('Quantum Project record created!');
+        facultyInvolved: facInvolved,
+        studentsInvolved: stuInvolved
+      }, newFacultyList, newStudentsList);
+
+      alert(`Quantum Project record created with ${stuInvolved.length} student developers and ${facInvolved.length} faculty advisors!`);
     } else if (activeTab === 'papers') {
       if (!paperForm.title) return alert('Please enter publication title');
+
+      const facAuthors = [];
+      if (paperForm.facultyAuthorName && paperForm.facultyAuthorName.trim()) {
+        const fId = getOrMakeFaculty(paperForm.facultyAuthorName, paperForm.facultyAuthorDept, 'Faculty Author');
+        if (fId) facAuthors.push(fId);
+      }
+
+      const stuAuthors = [];
+      if (paperForm.studentAuthorName && paperForm.studentAuthorName.trim()) {
+        const sId = getOrMakeStudent(paperForm.studentAuthorName, paperForm.studentAuthorDept, paperForm.studentAuthorRoll);
+        if (sId) stuAuthors.push(sId);
+      }
+
       addResearchPaper({
         title: paperForm.title,
         venue: paperForm.venue,
@@ -210,32 +444,85 @@ export const AddAchievementModal = ({
         date: paperForm.date,
         researchArea: paperForm.researchArea,
         abstract: paperForm.abstract,
-        facultyAuthors: paperForm.facultyAuthorId ? [paperForm.facultyAuthorId] : [],
-        studentAuthors: paperForm.studentAuthorId ? [paperForm.studentAuthorId] : []
-      });
+        facultyAuthors: facAuthors,
+        studentAuthors: stuAuthors
+      }, newFacultyList, newStudentsList);
+
       alert('Research Publication registered!');
     } else if (activeTab === 'hackathons') {
       if (!hackathonForm.name) return alert('Please enter hackathon name');
+
+      const facParticipants = [];
+      const stuParticipants = [];
+
+      if (hackathonForm.leadName && hackathonForm.leadName.trim()) {
+        if (audience === 'faculty') {
+          const fId = getOrMakeFaculty(hackathonForm.leadName, hackathonForm.leadDept, 'Hackathon Mentor');
+          if (fId) {
+            facParticipants.push({
+              facultyId: fId,
+              facultyName: hackathonForm.leadName.trim(),
+              teamName: hackathonForm.teamName || 'Faculty Q-Team',
+              projectBuilt: hackathonForm.projectBuilt || 'Quantum Algorithm Solution',
+              award: hackathonForm.award,
+              rank: 'Winner'
+            });
+          }
+        } else {
+          const sId = getOrMakeStudent(hackathonForm.leadName, hackathonForm.leadDept, hackathonForm.leadId);
+          if (sId) {
+            stuParticipants.push({
+              studentId: sId,
+              studentName: hackathonForm.leadName.trim(),
+              teamName: hackathonForm.teamName || 'Student Q-Team',
+              projectBuilt: hackathonForm.projectBuilt || 'Quantum Algorithm Solution',
+              award: hackathonForm.award,
+              rank: 'Winner'
+            });
+          }
+        }
+      }
+
+      // Add extra teammates
+      (hackathonForm.teammates || []).forEach(t => {
+        if (t.name && t.name.trim()) {
+          if (audience === 'faculty') {
+            const fId = getOrMakeFaculty(t.name, t.department, 'Hackathon Mentor');
+            if (fId) {
+              facParticipants.push({
+                facultyId: fId,
+                facultyName: t.name.trim(),
+                teamName: hackathonForm.teamName || 'Faculty Q-Team',
+                projectBuilt: hackathonForm.projectBuilt || 'Quantum Algorithm Solution',
+                award: hackathonForm.award,
+                rank: 'Winner'
+              });
+            }
+          } else {
+            const sId = getOrMakeStudent(t.name, t.department, t.studentId);
+            if (sId) {
+              stuParticipants.push({
+                studentId: sId,
+                studentName: t.name.trim(),
+                teamName: hackathonForm.teamName || 'Student Q-Team',
+                projectBuilt: hackathonForm.projectBuilt || 'Quantum Algorithm Solution',
+                award: hackathonForm.award,
+                rank: 'Winner'
+              });
+            }
+          }
+        }
+      });
+
       addHackathon({
         name: hackathonForm.name,
         organizer: hackathonForm.organizer,
         edition: hackathonForm.edition,
         date: hackathonForm.date,
-        facultyParticipants: audience === 'faculty' && hackathonForm.selectedPersonId ? [{
-          facultyId: hackathonForm.selectedPersonId,
-          teamName: hackathonForm.teamName || 'Faculty Q-Lab',
-          projectBuilt: hackathonForm.projectBuilt || 'Quantum Algorithm Solution',
-          award: hackathonForm.award,
-          rank: 'Winner'
-        }] : [],
-        studentParticipants: audience === 'students' && hackathonForm.selectedPersonId ? [{
-          studentId: hackathonForm.selectedPersonId,
-          teamName: hackathonForm.teamName || 'Student Q-Team',
-          projectBuilt: hackathonForm.projectBuilt || 'Quantum Algorithm Solution',
-          award: hackathonForm.award,
-          rank: 'Winner'
-        }] : []
-      });
+        facultyParticipants: facParticipants,
+        studentParticipants: stuParticipants
+      }, newFacultyList, newStudentsList);
+
       alert(`Hackathon achievement added to ${audience === 'faculty' ? 'Faculty' : 'Student'} section!`);
     }
 
@@ -273,7 +560,7 @@ export const AddAchievementModal = ({
             <div>
               <h3 style={{ margin: 0 }}>Add {getCategoryTitle()}</h3>
               <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                Targeting: <strong>{audience === 'faculty' ? 'Faculty Achievements' : 'Student Achievements'}</strong>
+                Directly enter details, leaders, and team members below
               </div>
             </div>
           </div>
@@ -420,34 +707,69 @@ export const AddAchievementModal = ({
                   ></textarea>
                 </div>
 
-                <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '1rem', marginTop: '1rem' }}>
-                  <h4 style={{ fontSize: '0.9rem', color: 'var(--primary)', marginBottom: '0.75rem' }}>
-                    Register Initial Completer ({audience === 'faculty' ? 'Faculty Member' : 'Student Candidate'})
+                <div style={{
+                  background: 'var(--bg-surface-subtle)',
+                  borderRadius: '12px',
+                  padding: '1.25rem',
+                  border: '1px solid var(--border-light)',
+                  marginTop: '1rem'
+                }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <User size={16} style={{ color: 'var(--primary)' }} />
+                    Register Course Completer ({audience === 'faculty' ? 'Faculty Member' : 'Student Candidate'})
                   </h4>
+
+                  <div className="form-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Completer Full Name</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={courseForm.completerName}
+                        onChange={(e) => setCourseForm({ ...courseForm, completerName: e.target.value })}
+                        placeholder="e.g. Alex Rivera"
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">{audience === 'faculty' ? 'Employee / Faculty ID' : 'Student ID / Roll No'}</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={courseForm.completerId}
+                        onChange={(e) => setCourseForm({ ...courseForm, completerId: e.target.value })}
+                        placeholder={audience === 'faculty' ? 'e.g. FAC-102' : 'e.g. QU-2024-055'}
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Department</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={courseForm.completerDept}
+                        onChange={(e) => setCourseForm({ ...courseForm, completerDept: e.target.value })}
+                        placeholder="e.g. Information Technology"
+                      />
+                    </div>
+                  </div>
+
                   <div className="form-grid-2">
                     <div className="form-group">
-                      <label className="form-label">Select Completer</label>
-                      <select
-                        className="form-select"
-                        value={courseForm.selectedPersonId}
-                        onChange={(e) => setCourseForm({ ...courseForm, selectedPersonId: e.target.value })}
-                      >
-                        <option value="">-- Select Member --</option>
-                        {audience === 'faculty'
-                          ? faculty.map(f => <option key={f.id} value={f.id}>{f.name} ({f.department})</option>)
-                          : students.map(s => <option key={s.id} value={s.id}>{s.name} ({s.studentId})</option>)
-                        }
-                      </select>
+                      <label className="form-label">Completion Date</label>
+                      <input
+                        type="date"
+                        className="form-input"
+                        value={courseForm.completionDate}
+                        onChange={(e) => setCourseForm({ ...courseForm, completionDate: e.target.value })}
+                      />
                     </div>
-
                     <div className="form-group">
-                      <label className="form-label">Completion Grade / Distinction</label>
+                      <label className="form-label">Grade / Distinction</label>
                       <input
                         type="text"
                         className="form-input"
                         value={courseForm.grade}
                         onChange={(e) => setCourseForm({ ...courseForm, grade: e.target.value })}
-                        placeholder="e.g. Distinction / 98%"
+                        placeholder="e.g. 98% (Distinction)"
                       />
                     </div>
                   </div>
@@ -456,7 +778,7 @@ export const AddAchievementModal = ({
                   <div className="form-group" style={{ marginTop: '0.5rem' }}>
                     <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700 }}>
                       <UploadCloud size={16} style={{ color: 'var(--primary)' }} />
-                      Upload Course Completion Certificate / Marksheet (Optional)
+                      Upload Course Certificate / Scorecard (Optional)
                     </label>
 
                     {!courseForm.uploadedFile ? (
@@ -469,7 +791,7 @@ export const AddAchievementModal = ({
                         />
                         <UploadCloud size={24} style={{ color: 'var(--primary)' }} />
                         <div style={{ fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                          Attach Course Completion Certificate / Scorecard
+                          Click or Drag to Attach PDF / Image Certificate
                         </div>
                       </label>
                     ) : (
@@ -535,29 +857,72 @@ export const AddAchievementModal = ({
                   </div>
                 </div>
 
-                <div className="form-grid-2">
-                  <div className="form-group">
-                    <label className="form-label">Assign Recipient ({audience === 'faculty' ? 'Faculty' : 'Student'})</label>
-                    <select
-                      className="form-select"
-                      value={certForm.selectedPersonId}
-                      onChange={(e) => setCertForm({ ...certForm, selectedPersonId: e.target.value })}
-                    >
-                      <option value="">-- Select Recipient --</option>
-                      {audience === 'faculty'
-                        ? faculty.map(f => <option key={f.id} value={f.id}>{f.name} ({f.department})</option>)
-                        : students.map(s => <option key={s.id} value={s.id}>{s.name} ({s.studentId})</option>)
-                      }
-                    </select>
+                {/* Recipient Details */}
+                <div style={{
+                  background: 'var(--bg-surface-subtle)',
+                  borderRadius: '12px',
+                  padding: '1.25rem',
+                  border: '1px solid var(--border-light)',
+                  marginBottom: '1.25rem'
+                }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <User size={16} style={{ color: 'var(--primary)' }} />
+                    Recipient Details ({audience === 'faculty' ? 'Faculty Member' : 'Student Candidate'})
+                  </h4>
+
+                  <div className="form-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Recipient Full Name</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={certForm.recipientName}
+                        onChange={(e) => setCertForm({ ...certForm, recipientName: e.target.value })}
+                        placeholder="e.g. Sarah Lin"
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">{audience === 'faculty' ? 'Employee / Faculty ID' : 'Student ID / Roll No'}</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={certForm.recipientId}
+                        onChange={(e) => setCertForm({ ...certForm, recipientId: e.target.value })}
+                        placeholder={audience === 'faculty' ? 'e.g. FAC-088' : 'e.g. QU-2024-088'}
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Department</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={certForm.recipientDept}
+                        onChange={(e) => setCertForm({ ...certForm, recipientDept: e.target.value })}
+                        placeholder="e.g. Computer Science"
+                      />
+                    </div>
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Issue Date</label>
-                    <input
-                      type="date"
-                      className="form-input"
-                      value={certForm.issueDate}
-                      onChange={(e) => setCertForm({ ...certForm, issueDate: e.target.value })}
-                    />
+
+                  <div className="form-grid-2">
+                    <div className="form-group">
+                      <label className="form-label">Issue Date</label>
+                      <input
+                        type="date"
+                        className="form-input"
+                        value={certForm.issueDate}
+                        onChange={(e) => setCertForm({ ...certForm, issueDate: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Score / Level</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={certForm.score}
+                        onChange={(e) => setCertForm({ ...certForm, score: e.target.value })}
+                        placeholder="e.g. Mastery / 98%"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -581,7 +946,7 @@ export const AddAchievementModal = ({
                         Click or Drop Certificate Document (PDF, PNG, JPG)
                       </div>
                       <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
-                        Attach verified official PDF certificate, credential scan, or badge (Max 8MB)
+                        Attach verified official PDF certificate or badge (Max 8MB)
                       </div>
                     </label>
                   ) : (
@@ -646,7 +1011,7 @@ export const AddAchievementModal = ({
                       className="form-input"
                       value={projectForm.domain}
                       onChange={(e) => setProjectForm({ ...projectForm, domain: e.target.value })}
-                      placeholder="e.g. Quantum Cryptography"
+                      placeholder="e.g. Quantum Cryptography / QML"
                       required
                     />
                   </div>
@@ -657,43 +1022,305 @@ export const AddAchievementModal = ({
                       className="form-input"
                       value={projectForm.techStack}
                       onChange={(e) => setProjectForm({ ...projectForm, techStack: e.target.value })}
-                      placeholder="e.g. Qiskit, PennyLane, Python"
+                      placeholder="e.g. Qiskit, PennyLane, Python, PyTorch"
                       required
                     />
                   </div>
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Abstract / Details</label>
+                  <label className="form-label">Abstract / Project Description</label>
                   <textarea
                     className="form-textarea"
                     rows="3"
                     value={projectForm.description}
                     onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })}
-                    placeholder="Describe algorithm, simulation benchmarks, and results..."
+                    placeholder="Describe algorithm architecture, quantum circuit gates, benchmarks, and findings..."
                   ></textarea>
                 </div>
 
                 <div className="form-grid-2">
                   <div className="form-group">
-                    <label className="form-label">Faculty Lead / Advisor</label>
+                    <label className="form-label">Project Status</label>
                     <select
                       className="form-select"
-                      value={projectForm.leadFacultyId}
-                      onChange={(e) => setProjectForm({ ...projectForm, leadFacultyId: e.target.value })}
+                      value={projectForm.status}
+                      onChange={(e) => setProjectForm({ ...projectForm, status: e.target.value })}
                     >
-                      {faculty.map(f => <option key={f.id} value={f.id}>{f.name} ({f.department})</option>)}
+                      <option value="Active Development">Active Development</option>
+                      <option value="Completed & Validated">Completed & Validated</option>
+                      <option value="Research Prototype">Research Prototype</option>
+                      <option value="Hardware Benchmarked">Hardware Benchmarked</option>
                     </select>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Lead Student Researcher</label>
-                    <select
-                      className="form-select"
-                      value={projectForm.leadStudentId}
-                      onChange={(e) => setProjectForm({ ...projectForm, leadStudentId: e.target.value })}
+                    <label className="form-label">GitHub Repository / Source URL</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={projectForm.githubUrl}
+                      onChange={(e) => setProjectForm({ ...projectForm, githubUrl: e.target.value })}
+                      placeholder="https://github.com/..."
+                    />
+                  </div>
+                </div>
+
+                {/* 1. STUDENT LEADER SECTION */}
+                <div style={{
+                  background: 'var(--bg-surface-subtle)',
+                  borderRadius: '12px',
+                  padding: '1.25rem',
+                  border: '1px solid var(--border-light)',
+                  marginBottom: '1rem'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <User size={16} /> Lead Student Researcher / Team Leader
+                    </h4>
+                    {students.length > 0 && (
+                      <select
+                        style={{ fontSize: '0.78rem', padding: '0.2rem 0.5rem', borderRadius: '6px' }}
+                        onChange={(e) => {
+                          const found = students.find(s => s.id === e.target.value);
+                          if (found) {
+                            setProjectForm(prev => ({
+                              ...prev,
+                              leadStudentName: found.name,
+                              leadStudentRoll: found.studentId || '',
+                              leadStudentDept: found.department || ''
+                            }));
+                          }
+                        }}
+                      >
+                        <option value="">-- Quick autofill from registered student --</option>
+                        {students.map(s => (
+                          <option key={s.id} value={s.id}>{s.name} ({s.studentId || s.department})</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+
+                  <div className="form-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Student Leader Name</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={projectForm.leadStudentName}
+                        onChange={(e) => setProjectForm({ ...projectForm, leadStudentName: e.target.value })}
+                        placeholder="e.g. Alex Rivera"
+                        required
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Roll Number / Student ID</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={projectForm.leadStudentRoll}
+                        onChange={(e) => setProjectForm({ ...projectForm, leadStudentRoll: e.target.value })}
+                        placeholder="e.g. QU-2024-001"
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Department</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={projectForm.leadStudentDept}
+                        onChange={(e) => setProjectForm({ ...projectForm, leadStudentDept: e.target.value })}
+                        placeholder="e.g. Computer Science & Engineering"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group" style={{ marginTop: '0.75rem', marginBottom: 0 }}>
+                    <label className="form-label">Leader Role on Project</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={projectForm.leadStudentRole}
+                      onChange={(e) => setProjectForm({ ...projectForm, leadStudentRole: e.target.value })}
+                      placeholder="e.g. Project Lead & Quantum Algorithm Architect"
+                    />
+                  </div>
+                </div>
+
+                {/* 2. TEAMMATES / TEAM MEMBERS */}
+                <div style={{
+                  background: 'var(--bg-surface-subtle)',
+                  borderRadius: '12px',
+                  padding: '1.25rem',
+                  border: '1px solid var(--border-light)',
+                  marginBottom: '1rem'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <div>
+                      <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <Users size={16} style={{ color: 'var(--primary)' }} /> Student Teammates & Collaborators ({projectForm.teammates.length})
+                      </h4>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        Add all team members contributing to this quantum project
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      onClick={handleAddProjectTeammate}
+                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}
                     >
-                      {students.map(s => <option key={s.id} value={s.id}>{s.name} ({s.department})</option>)}
-                    </select>
+                      <UserPlus size={14} /> + Add Teammate
+                    </button>
+                  </div>
+
+                  {projectForm.teammates.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-muted)', fontSize: '0.84rem' }}>
+                      No additional teammates added yet. Click <strong>"+ Add Teammate"</strong> to add team members.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {projectForm.teammates.map((member, idx) => (
+                        <div
+                          key={member.id || idx}
+                          style={{
+                            background: 'var(--bg-surface)',
+                            border: '1px solid var(--border-light)',
+                            borderRadius: '8px',
+                            padding: '0.85rem',
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr)) 34px',
+                            gap: '0.5rem',
+                            alignItems: 'flex-end'
+                          }}
+                        >
+                          <div>
+                            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Teammate Name</label>
+                            <input
+                              type="text"
+                              className="form-input"
+                              value={member.name}
+                              onChange={(e) => handleUpdateProjectTeammate(idx, 'name', e.target.value)}
+                              placeholder="e.g. John Doe"
+                              style={{ padding: '0.4rem 0.6rem', fontSize: '0.82rem' }}
+                            />
+                          </div>
+
+                          <div>
+                            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Roll / Student ID</label>
+                            <input
+                              type="text"
+                              className="form-input"
+                              value={member.studentId}
+                              onChange={(e) => handleUpdateProjectTeammate(idx, 'studentId', e.target.value)}
+                              placeholder="e.g. QU-2024-002"
+                              style={{ padding: '0.4rem 0.6rem', fontSize: '0.82rem' }}
+                            />
+                          </div>
+
+                          <div>
+                            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Department</label>
+                            <input
+                              type="text"
+                              className="form-input"
+                              value={member.department}
+                              onChange={(e) => handleUpdateProjectTeammate(idx, 'department', e.target.value)}
+                              placeholder="e.g. Computer Science"
+                              style={{ padding: '0.4rem 0.6rem', fontSize: '0.82rem' }}
+                            />
+                          </div>
+
+                          <div>
+                            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Team Role</label>
+                            <input
+                              type="text"
+                              className="form-input"
+                              value={member.role}
+                              onChange={(e) => handleUpdateProjectTeammate(idx, 'role', e.target.value)}
+                              placeholder="e.g. Quantum Circuit Dev"
+                              style={{ padding: '0.4rem 0.6rem', fontSize: '0.82rem' }}
+                            />
+                          </div>
+
+                          <button
+                            type="button"
+                            className="btn-icon-danger"
+                            title="Remove Teammate"
+                            onClick={() => handleRemoveProjectTeammate(idx)}
+                            style={{ height: '34px', width: '34px', marginBottom: '2px' }}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. FACULTY LEAD / ADVISOR */}
+                <div style={{
+                  background: 'var(--bg-surface-subtle)',
+                  borderRadius: '12px',
+                  padding: '1.25rem',
+                  border: '1px solid var(--border-light)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--secondary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <User size={16} /> Faculty Lead / Research Advisor
+                    </h4>
+                    {faculty.length > 0 && (
+                      <select
+                        style={{ fontSize: '0.78rem', padding: '0.2rem 0.5rem', borderRadius: '6px' }}
+                        onChange={(e) => {
+                          const found = faculty.find(f => f.id === e.target.value);
+                          if (found) {
+                            setProjectForm(prev => ({
+                              ...prev,
+                              facultyLeadName: found.name,
+                              facultyLeadDept: found.department || ''
+                            }));
+                          }
+                        }}
+                      >
+                        <option value="">-- Quick autofill from registered faculty --</option>
+                        {faculty.map(f => (
+                          <option key={f.id} value={f.id}>{f.name} ({f.department})</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+
+                  <div className="form-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Faculty Advisor Name</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={projectForm.facultyLeadName}
+                        onChange={(e) => setProjectForm({ ...projectForm, facultyLeadName: e.target.value })}
+                        placeholder="e.g. Dr. Emily Davis"
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Department</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={projectForm.facultyLeadDept}
+                        onChange={(e) => setProjectForm({ ...projectForm, facultyLeadDept: e.target.value })}
+                        placeholder="e.g. Physics & Quantum Science"
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Advisory Role</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={projectForm.facultyLeadRole}
+                        onChange={(e) => setProjectForm({ ...projectForm, facultyLeadRole: e.target.value })}
+                        placeholder="e.g. Research Mentor & PI"
+                      />
+                    </div>
                   </div>
                 </div>
               </>
@@ -727,7 +1354,7 @@ export const AddAchievementModal = ({
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">DOI Link</label>
+                    <label className="form-label">DOI Link / Identifier</label>
                     <input
                       type="text"
                       className="form-input"
@@ -751,24 +1378,93 @@ export const AddAchievementModal = ({
 
                 <div className="form-grid-2">
                   <div className="form-group">
-                    <label className="form-label">Faculty Author</label>
-                    <select
-                      className="form-select"
-                      value={paperForm.facultyAuthorId}
-                      onChange={(e) => setPaperForm({ ...paperForm, facultyAuthorId: e.target.value })}
-                    >
-                      {faculty.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-                    </select>
+                    <label className="form-label">Research Area</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={paperForm.researchArea}
+                      onChange={(e) => setPaperForm({ ...paperForm, researchArea: e.target.value })}
+                      placeholder="e.g. Quantum Error Correction"
+                    />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Student Co-Author</label>
-                    <select
-                      className="form-select"
-                      value={paperForm.studentAuthorId}
-                      onChange={(e) => setPaperForm({ ...paperForm, studentAuthorId: e.target.value })}
-                    >
-                      {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                    </select>
+                    <label className="form-label">Citations Count</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      value={paperForm.citations}
+                      onChange={(e) => setPaperForm({ ...paperForm, citations: e.target.value })}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+
+                {/* Authors Section */}
+                <div style={{
+                  background: 'var(--bg-surface-subtle)',
+                  borderRadius: '12px',
+                  padding: '1.25rem',
+                  border: '1px solid var(--border-light)'
+                }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Users size={16} style={{ color: 'var(--primary)' }} />
+                    Authors & Co-Authors
+                  </h4>
+
+                  <div className="form-grid-2" style={{ marginBottom: '0.75rem' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Faculty Author Name</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={paperForm.facultyAuthorName}
+                        onChange={(e) => setPaperForm({ ...paperForm, facultyAuthorName: e.target.value })}
+                        placeholder="e.g. Dr. Emily Davis"
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Faculty Department</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={paperForm.facultyAuthorDept}
+                        onChange={(e) => setPaperForm({ ...paperForm, facultyAuthorDept: e.target.value })}
+                        placeholder="e.g. Physics"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Student Co-Author Name</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={paperForm.studentAuthorName}
+                        onChange={(e) => setPaperForm({ ...paperForm, studentAuthorName: e.target.value })}
+                        placeholder="e.g. Alex Rivera"
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Student ID / Roll No</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={paperForm.studentAuthorRoll}
+                        onChange={(e) => setPaperForm({ ...paperForm, studentAuthorRoll: e.target.value })}
+                        placeholder="e.g. QU-2024-001"
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Student Department</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={paperForm.studentAuthorDept}
+                        onChange={(e) => setPaperForm({ ...paperForm, studentAuthorDept: e.target.value })}
+                        placeholder="e.g. Computer Science"
+                      />
+                    </div>
                   </div>
                 </div>
               </>
@@ -851,30 +1547,134 @@ export const AddAchievementModal = ({
                   />
                 </div>
 
-                <div className="form-grid-2">
-                  <div className="form-group">
-                    <label className="form-label">Lead Participant ({audience === 'faculty' ? 'Faculty Member' : 'Student Candidate'})</label>
-                    <select
-                      className="form-select"
-                      value={hackathonForm.selectedPersonId}
-                      onChange={(e) => setHackathonForm({ ...hackathonForm, selectedPersonId: e.target.value })}
-                    >
-                      <option value="">-- Select Member --</option>
-                      {audience === 'faculty'
-                        ? faculty.map(f => <option key={f.id} value={f.id}>{f.name} ({f.department})</option>)
-                        : students.map(s => <option key={s.id} value={s.id}>{s.name} ({s.studentId})</option>)
-                      }
-                    </select>
+                {/* Team Leader & Teammates Section */}
+                <div style={{
+                  background: 'var(--bg-surface-subtle)',
+                  borderRadius: '12px',
+                  padding: '1.25rem',
+                  border: '1px solid var(--border-light)',
+                  marginBottom: '1rem'
+                }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <User size={16} /> Team Leader ({audience === 'faculty' ? 'Faculty Lead' : 'Student Lead'})
+                  </h4>
+
+                  <div className="form-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Leader Full Name</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={hackathonForm.leadName}
+                        onChange={(e) => setHackathonForm({ ...hackathonForm, leadName: e.target.value })}
+                        placeholder="e.g. Alex Rivera"
+                        required
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">{audience === 'faculty' ? 'Faculty / Employee ID' : 'Student ID / Roll No'}</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={hackathonForm.leadId}
+                        onChange={(e) => setHackathonForm({ ...hackathonForm, leadId: e.target.value })}
+                        placeholder={audience === 'faculty' ? 'e.g. FAC-001' : 'e.g. QU-2024-001'}
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Department</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={hackathonForm.leadDept}
+                        onChange={(e) => setHackathonForm({ ...hackathonForm, leadDept: e.target.value })}
+                        placeholder="e.g. Computer Science"
+                      />
+                    </div>
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Date / Month</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={hackathonForm.date}
-                      onChange={(e) => setHackathonForm({ ...hackathonForm, date: e.target.value })}
-                      placeholder="e.g. February 2026"
-                    />
+
+                  {/* Teammates Section in Hackathon */}
+                  <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border-light)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                      <h5 style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <Users size={15} style={{ color: 'var(--primary)' }} /> Additional Teammates ({hackathonForm.teammates.length})
+                      </h5>
+                      <button
+                        type="button"
+                        className="btn btn-outline btn-sm"
+                        onClick={handleAddHackathonTeammate}
+                        style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}
+                      >
+                        <UserPlus size={14} /> + Add Teammate
+                      </button>
+                    </div>
+
+                    {hackathonForm.teammates.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '0.75rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                        No additional teammates added. Click <strong>"+ Add Teammate"</strong> to add extra team members.
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                        {hackathonForm.teammates.map((member, idx) => (
+                          <div
+                            key={member.id || idx}
+                            style={{
+                              background: 'var(--bg-surface)',
+                              border: '1px solid var(--border-light)',
+                              borderRadius: '8px',
+                              padding: '0.75rem',
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr)) 34px',
+                              gap: '0.5rem',
+                              alignItems: 'flex-end'
+                            }}
+                          >
+                            <div>
+                              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Name</label>
+                              <input
+                                type="text"
+                                className="form-input"
+                                value={member.name}
+                                onChange={(e) => handleUpdateHackathonTeammate(idx, 'name', e.target.value)}
+                                placeholder="Teammate Name"
+                                style={{ padding: '0.4rem 0.6rem', fontSize: '0.82rem' }}
+                              />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>ID / Roll</label>
+                              <input
+                                type="text"
+                                className="form-input"
+                                value={member.studentId}
+                                onChange={(e) => handleUpdateHackathonTeammate(idx, 'studentId', e.target.value)}
+                                placeholder="ID / Roll"
+                                style={{ padding: '0.4rem 0.6rem', fontSize: '0.82rem' }}
+                              />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Department</label>
+                              <input
+                                type="text"
+                                className="form-input"
+                                value={member.department}
+                                onChange={(e) => handleUpdateHackathonTeammate(idx, 'department', e.target.value)}
+                                placeholder="Department"
+                                style={{ padding: '0.4rem 0.6rem', fontSize: '0.82rem' }}
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              className="btn-icon-danger"
+                              title="Remove Teammate"
+                              onClick={() => handleRemoveHackathonTeammate(idx)}
+                              style={{ height: '34px', width: '34px', marginBottom: '2px' }}
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </>

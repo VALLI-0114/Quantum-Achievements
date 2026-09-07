@@ -4,7 +4,7 @@ import { useQuantumDB } from '../../data/db';
 import { downloadCategoryReportPDF, downloadProjectReportPDF } from '../../utils/pdfGenerator';
 
 export const StudentProjects = ({ onOpenProfile, onAddProject }) => {
-  const { projects, students, faculty, deleteRecord, removeProjectParticipant } = useQuantumDB();
+  const { projects, students, faculty, deleteRecord, confirmDelete, removeProjectParticipant } = useQuantumDB();
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -119,10 +119,14 @@ export const StudentProjects = ({ onOpenProfile, onAddProject }) => {
               <button
                 className="btn btn-danger"
                 onClick={() => {
-                  if (window.confirm(`Are you sure you want to delete "${selectedProject.title}"?`)) {
-                    deleteRecord('projects', selectedProject.id);
-                    setSelectedProjectId(null);
-                  }
+                  confirmDelete({
+                    title: selectedProject.title,
+                    message: `Are you sure you want to delete project "${selectedProject.title}"?`,
+                    onConfirm: () => {
+                      deleteRecord('projects', selectedProject.id);
+                      setSelectedProjectId(null);
+                    }
+                  });
                 }}
               >
                 <Trash2 size={16} /> Delete Project
@@ -171,9 +175,11 @@ export const StudentProjects = ({ onOpenProfile, onAddProject }) => {
                       className="btn-icon-danger"
                       title="Remove Student from Project"
                       onClick={() => {
-                        if (window.confirm(`Remove ${item.student.name} from this project?`)) {
-                          removeProjectParticipant(selectedProject.id, 'student', item.studentId);
-                        }
+                        confirmDelete({
+                          title: `Remove ${item.student.name}`,
+                          message: `Remove ${item.student.name} from this project?`,
+                          onConfirm: () => removeProjectParticipant(selectedProject.id, 'student', item.studentId)
+                        });
                       }}
                     >
                       <Trash2 size={15} />
@@ -218,9 +224,11 @@ export const StudentProjects = ({ onOpenProfile, onAddProject }) => {
                         className="btn-icon-danger"
                         title="Remove Faculty from Project"
                         onClick={() => {
-                          if (window.confirm(`Remove ${item.faculty.name} from this project?`)) {
-                            removeProjectParticipant(selectedProject.id, 'faculty', item.facultyId);
-                          }
+                          confirmDelete({
+                            title: `Remove ${item.faculty.name}`,
+                            message: `Remove ${item.faculty.name} from this project?`,
+                            onConfirm: () => removeProjectParticipant(selectedProject.id, 'faculty', item.facultyId)
+                          });
                         }}
                       >
                         <Trash2 size={15} />
@@ -303,9 +311,12 @@ export const StudentProjects = ({ onOpenProfile, onAddProject }) => {
                       title="Delete Project"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (window.confirm(`Are you sure you want to delete "${project.title}"?`)) {
-                          deleteRecord('projects', project.id);
-                        }
+                        e.preventDefault();
+                        confirmDelete({
+                          title: project.title,
+                          message: `Are you sure you want to delete "${project.title}"?`,
+                          onConfirm: () => deleteRecord('projects', project.id)
+                        });
                       }}
                     >
                       <Trash2 size={15} />

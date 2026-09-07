@@ -5,7 +5,7 @@ import { downloadCategoryReportPDF, downloadSingleCertificateReportPDF } from '.
 import { AddParticipantModal } from '../common/AddParticipantModal';
 
 export const StudentCertificates = ({ onOpenCertificate, onOpenProfile, onAddCertificate }) => {
-  const { certificates, students, deleteRecord, removeCertificateRecipient } = useQuantumDB();
+  const { certificates, students, deleteRecord, confirmDelete, removeCertificateRecipient } = useQuantumDB();
   const [selectedCertId, setSelectedCertId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [studentSearch, setStudentSearch] = useState('');
@@ -101,10 +101,14 @@ export const StudentCertificates = ({ onOpenCertificate, onOpenProfile, onAddCer
               <button
                 className="btn btn-danger"
                 onClick={() => {
-                  if (window.confirm(`Are you sure you want to delete certificate "${selectedCert.title}"?`)) {
-                    deleteRecord('certificates', selectedCert.id);
-                    setSelectedCertId(null);
-                  }
+                  confirmDelete({
+                    title: selectedCert.title,
+                    message: `Are you sure you want to delete certificate "${selectedCert.title}"?`,
+                    onConfirm: () => {
+                      deleteRecord('certificates', selectedCert.id);
+                      setSelectedCertId(null);
+                    }
+                  });
                 }}
               >
                 <Trash2 size={15} /> Delete Certificate
@@ -272,9 +276,11 @@ export const StudentCertificates = ({ onOpenCertificate, onOpenProfile, onAddCer
                         className="btn-icon-danger"
                         title="Remove student recipient"
                         onClick={() => {
-                          if (window.confirm(`Remove ${item.student.name} from this certificate?`)) {
-                            removeCertificateRecipient(selectedCert.id, 'students', item.student.id);
-                          }
+                          confirmDelete({
+                            title: `Remove ${item.student.name}`,
+                            message: `Remove ${item.student.name} from this certificate?`,
+                            onConfirm: () => removeCertificateRecipient(selectedCert.id, 'students', item.student.id)
+                          });
                         }}
                       >
                         <Trash2 size={14} />
@@ -358,9 +364,12 @@ export const StudentCertificates = ({ onOpenCertificate, onOpenProfile, onAddCer
                       title="Delete Certificate"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (window.confirm(`Are you sure you want to delete certificate "${cert.title}"?`)) {
-                          deleteRecord('certificates', cert.id);
-                        }
+                        e.preventDefault();
+                        confirmDelete({
+                          title: cert.title,
+                          message: `Are you sure you want to delete certificate "${cert.title}"?`,
+                          onConfirm: () => deleteRecord('certificates', cert.id)
+                        });
                       }}
                     >
                       <Trash2 size={13} />

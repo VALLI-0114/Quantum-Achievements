@@ -5,7 +5,7 @@ import { downloadCourseRosterPDF, downloadCategoryReportPDF } from '../../utils/
 import { AddParticipantModal } from '../common/AddParticipantModal';
 
 export const StudentCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }) => {
-  const { courses, students, deleteRecord, removeCourseCompletion } = useQuantumDB();
+  const { courses, students, deleteRecord, confirmDelete, removeCourseCompletion } = useQuantumDB();
   const [selectedCourseId, setSelectedCourseId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [studentSearch, setStudentSearch] = useState('');
@@ -131,10 +131,14 @@ export const StudentCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }
               <button
                 className="btn btn-danger"
                 onClick={() => {
-                  if (window.confirm(`Are you sure you want to delete course "${selectedCourse.name}"?`)) {
-                    deleteRecord('courses', selectedCourse.id);
-                    setSelectedCourseId(null);
-                  }
+                  confirmDelete({
+                    title: selectedCourse.name || selectedCourse.code,
+                    message: `Are you sure you want to delete course "${selectedCourse.name || selectedCourse.code}"? This will remove the course and its student completion records.`,
+                    onConfirm: () => {
+                      deleteRecord('courses', selectedCourse.id);
+                      setSelectedCourseId(null);
+                    }
+                  });
                 }}
               >
                 <Trash2 size={15} /> Delete Course
@@ -331,9 +335,11 @@ export const StudentCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }
                         className="btn-icon-danger"
                         title="Remove student from course"
                         onClick={() => {
-                          if (window.confirm(`Remove ${item.student.name} from this course completion roster?`)) {
-                            removeCourseCompletion(selectedCourse.id, 'students', item.student.id);
-                          }
+                          confirmDelete({
+                            title: `Remove ${item.student.name}`,
+                            message: `Remove ${item.student.name} from this course completion roster?`,
+                            onConfirm: () => removeCourseCompletion(selectedCourse.id, 'students', item.student.id)
+                          });
                         }}
                       >
                         <Trash2 size={14} />
@@ -457,9 +463,12 @@ export const StudentCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }
                       title="Delete Course"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (window.confirm(`Are you sure you want to delete course "${course.name}"?`)) {
-                          deleteRecord('courses', course.id);
-                        }
+                        e.preventDefault();
+                        confirmDelete({
+                          title: course.name || course.code,
+                          message: `Are you sure you want to delete course "${course.name || course.code}"? This action cannot be undone.`,
+                          onConfirm: () => deleteRecord('courses', course.id)
+                        });
                       }}
                     >
                       <Trash2 size={13} />

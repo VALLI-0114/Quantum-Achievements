@@ -4,7 +4,7 @@ import { useQuantumDB } from '../../data/db';
 import { downloadCategoryReportPDF, downloadHackathonReportPDF } from '../../utils/pdfGenerator';
 
 export const FacultyHackathons = ({ onOpenProfile, onAddHackathon }) => {
-  const { hackathons, faculty, deleteRecord, removeHackathonParticipant } = useQuantumDB();
+  const { hackathons, faculty, deleteRecord, confirmDelete, removeHackathonParticipant } = useQuantumDB();
   const [selectedHackathonId, setSelectedHackathonId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -89,10 +89,14 @@ export const FacultyHackathons = ({ onOpenProfile, onAddHackathon }) => {
               <button
                 className="btn btn-danger"
                 onClick={() => {
-                  if (window.confirm(`Are you sure you want to delete "${selectedHackathon.name}"?`)) {
-                    deleteRecord('hackathons', selectedHackathon.id);
-                    setSelectedHackathonId(null);
-                  }
+                  confirmDelete({
+                    title: selectedHackathon.name,
+                    message: `Are you sure you want to delete "${selectedHackathon.name}"?`,
+                    onConfirm: () => {
+                      deleteRecord('hackathons', selectedHackathon.id);
+                      setSelectedHackathonId(null);
+                    }
+                  });
                 }}
               >
                 <Trash2 size={16} /> Delete Hackathon
@@ -210,9 +214,11 @@ export const FacultyHackathons = ({ onOpenProfile, onAddHackathon }) => {
                         className="btn-icon-danger"
                         title="Remove Participant"
                         onClick={() => {
-                          if (window.confirm(`Remove ${item.faculty.name} from this hackathon?`)) {
-                            removeHackathonParticipant(selectedHackathon.id, 'faculty', item.facultyId);
-                          }
+                          confirmDelete({
+                            title: `Remove ${item.faculty.name}`,
+                            message: `Remove ${item.faculty.name} from this hackathon?`,
+                            onConfirm: () => removeHackathonParticipant(selectedHackathon.id, 'faculty', item.facultyId)
+                          });
                         }}
                       >
                         <Trash2 size={15} />
@@ -285,9 +291,12 @@ export const FacultyHackathons = ({ onOpenProfile, onAddHackathon }) => {
                       title="Delete Hackathon"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (window.confirm(`Are you sure you want to delete "${h.name}"?`)) {
-                          deleteRecord('hackathons', h.id);
-                        }
+                        e.preventDefault();
+                        confirmDelete({
+                          title: h.name,
+                          message: `Are you sure you want to delete "${h.name}"?`,
+                          onConfirm: () => deleteRecord('hackathons', h.id)
+                        });
                       }}
                     >
                       <Trash2 size={15} />

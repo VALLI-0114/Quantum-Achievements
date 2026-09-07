@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import { ConfirmDeleteModal } from '../components/common/ConfirmDeleteModal';
 import {
   INITIAL_FACULTY,
   INITIAL_STUDENTS,
@@ -345,35 +346,65 @@ export const QuantumDBProvider = ({ children }) => {
     }));
   };
 
+  const [deleteModalState, setDeleteModalState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null
+  });
+
+  const confirmDelete = ({ title, message, onConfirm }) => {
+    setDeleteModalState({
+      isOpen: true,
+      title: title || '',
+      message: message || '',
+      onConfirm: () => {
+        if (onConfirm) onConfirm();
+      }
+    });
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModalState({
+      isOpen: false,
+      title: '',
+      message: '',
+      onConfirm: null
+    });
+  };
+
   // 7. Delete Entity Record
   const deleteRecord = (category, id) => {
     setData(prev => {
-      if (category === 'faculty') return { ...prev, faculty: prev.faculty.filter(f => f.id !== id) };
-      if (category === 'students') return { ...prev, students: prev.students.filter(s => s.id !== id) };
-      if (category === 'courses') return { ...prev, courses: prev.courses.filter(c => c.id !== id) };
-      if (category === 'certificates') return { ...prev, certificates: prev.certificates.filter(c => c.id !== id) };
-      if (category === 'projects') return { ...prev, projects: prev.projects.filter(p => p.id !== id) };
-      if (category === 'papers' || category === 'researchPapers') return { ...prev, researchPapers: prev.researchPapers.filter(p => p.id !== id) };
-      if (category === 'hackathons') return { ...prev, hackathons: prev.hackathons.filter(h => h.id !== id) };
+      const matchId = String(id);
+      if (category === 'faculty') return { ...prev, faculty: prev.faculty.filter(f => String(f.id) !== matchId) };
+      if (category === 'students') return { ...prev, students: prev.students.filter(s => String(s.id) !== matchId) };
+      if (category === 'courses') return { ...prev, courses: prev.courses.filter(c => String(c.id) !== matchId) };
+      if (category === 'certificates') return { ...prev, certificates: prev.certificates.filter(c => String(c.id) !== matchId) };
+      if (category === 'projects') return { ...prev, projects: prev.projects.filter(p => String(p.id) !== matchId) };
+      if (category === 'papers' || category === 'researchPapers') return { ...prev, researchPapers: prev.researchPapers.filter(p => String(p.id) !== matchId) };
+      if (category === 'hackathons') return { ...prev, hackathons: prev.hackathons.filter(h => String(h.id) !== matchId) };
       return prev;
     });
   };
 
   // 8. Delete Participant from Course Roster
   const removeCourseCompletion = (courseId, audienceType, personId) => {
+    const matchCourse = String(courseId);
+    const matchPerson = String(personId);
     setData(prev => ({
       ...prev,
       courses: prev.courses.map(c => {
-        if (c.id !== courseId) return c;
+        if (String(c.id) !== matchCourse) return c;
         if (audienceType === 'faculty') {
           return {
             ...c,
-            facultyCompletions: (c.facultyCompletions || []).filter(fc => fc.facultyId !== personId)
+            facultyCompletions: (c.facultyCompletions || []).filter(fc => String(fc.facultyId) !== matchPerson)
           };
         } else {
           return {
             ...c,
-            studentCompletions: (c.studentCompletions || []).filter(sc => sc.studentId !== personId)
+            studentCompletions: (c.studentCompletions || []).filter(sc => String(sc.studentId) !== matchPerson)
           };
         }
       })
@@ -382,19 +413,21 @@ export const QuantumDBProvider = ({ children }) => {
 
   // 9. Delete Recipient from Certificate
   const removeCertificateRecipient = (certId, audienceType, personId) => {
+    const matchCert = String(certId);
+    const matchPerson = String(personId);
     setData(prev => ({
       ...prev,
       certificates: prev.certificates.map(c => {
-        if (c.id !== certId) return c;
+        if (String(c.id) !== matchCert) return c;
         if (audienceType === 'faculty') {
           return {
             ...c,
-            facultyRecipients: (c.facultyRecipients || []).filter(fr => fr.facultyId !== personId)
+            facultyRecipients: (c.facultyRecipients || []).filter(fr => String(fr.facultyId) !== matchPerson)
           };
         } else {
           return {
             ...c,
-            studentRecipients: (c.studentRecipients || []).filter(sr => sr.studentId !== personId)
+            studentRecipients: (c.studentRecipients || []).filter(sr => String(sr.studentId) !== matchPerson)
           };
         }
       })
@@ -403,19 +436,21 @@ export const QuantumDBProvider = ({ children }) => {
 
   // 10. Delete Participant from Project
   const removeProjectParticipant = (projectId, roleType, personId) => {
+    const matchProj = String(projectId);
+    const matchPerson = String(personId);
     setData(prev => ({
       ...prev,
       projects: prev.projects.map(p => {
-        if (p.id !== projectId) return p;
+        if (String(p.id) !== matchProj) return p;
         if (roleType === 'faculty') {
           return {
             ...p,
-            facultyInvolved: (p.facultyInvolved || []).filter(fi => fi.facultyId !== personId)
+            facultyInvolved: (p.facultyInvolved || []).filter(fi => String(fi.facultyId) !== matchPerson)
           };
         } else {
           return {
             ...p,
-            studentsInvolved: (p.studentsInvolved || []).filter(si => si.studentId !== personId)
+            studentsInvolved: (p.studentsInvolved || []).filter(si => String(si.studentId) !== matchPerson)
           };
         }
       })
@@ -424,19 +459,21 @@ export const QuantumDBProvider = ({ children }) => {
 
   // 11. Delete Author from Paper
   const removePaperAuthor = (paperId, roleType, personId) => {
+    const matchPaper = String(paperId);
+    const matchPerson = String(personId);
     setData(prev => ({
       ...prev,
       researchPapers: prev.researchPapers.map(rp => {
-        if (rp.id !== paperId) return rp;
+        if (String(rp.id) !== matchPaper) return rp;
         if (roleType === 'faculty') {
           return {
             ...rp,
-            facultyAuthors: (rp.facultyAuthors || []).filter(fa => fa.facultyId !== personId)
+            facultyAuthors: (rp.facultyAuthors || []).filter(fa => String(fa.facultyId || fa) !== matchPerson)
           };
         } else {
           return {
             ...rp,
-            studentAuthors: (rp.studentAuthors || []).filter(sa => sa.studentId !== personId)
+            studentAuthors: (rp.studentAuthors || []).filter(sa => String(sa.studentId || sa) !== matchPerson)
           };
         }
       })
@@ -445,19 +482,21 @@ export const QuantumDBProvider = ({ children }) => {
 
   // 12. Delete Participant from Hackathon
   const removeHackathonParticipant = (hackathonId, roleType, personId) => {
+    const matchHck = String(hackathonId);
+    const matchPerson = String(personId);
     setData(prev => ({
       ...prev,
       hackathons: prev.hackathons.map(h => {
-        if (h.id !== hackathonId) return h;
+        if (String(h.id) !== matchHck) return h;
         if (roleType === 'faculty') {
           return {
             ...h,
-            facultyParticipants: (h.facultyParticipants || []).filter(fp => fp.facultyId !== personId)
+            facultyParticipants: (h.facultyParticipants || []).filter(fp => String(fp.facultyId) !== matchPerson)
           };
         } else {
           return {
             ...h,
-            studentParticipants: (h.studentParticipants || []).filter(sp => sp.studentId !== personId)
+            studentParticipants: (h.studentParticipants || []).filter(sp => String(sp.studentId) !== matchPerson)
           };
         }
       })
@@ -474,19 +513,23 @@ export const QuantumDBProvider = ({ children }) => {
   };
 
   const resetSeedData = () => {
-    if (window.confirm("Are you sure you want to reset the database to default academic seed records?")) {
-      const initial = {
-        faculty: INITIAL_FACULTY,
-        students: INITIAL_STUDENTS,
-        courses: INITIAL_COURSES,
-        certificates: INITIAL_CERTIFICATES,
-        projects: INITIAL_PROJECTS,
-        researchPapers: INITIAL_RESEARCH_PAPERS,
-        hackathons: INITIAL_HACKATHONS
-      };
-      setData(initial);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
-    }
+    confirmDelete({
+      title: "Reset Database",
+      message: "Are you sure you want to reset the database? All records will be cleared.",
+      onConfirm: () => {
+        const initial = {
+          faculty: INITIAL_FACULTY,
+          students: INITIAL_STUDENTS,
+          courses: INITIAL_COURSES,
+          certificates: INITIAL_CERTIFICATES,
+          projects: INITIAL_PROJECTS,
+          researchPapers: INITIAL_RESEARCH_PAPERS,
+          hackathons: INITIAL_HACKATHONS
+        };
+        setData(initial);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+      }
+    });
   };
 
   return (
@@ -512,6 +555,7 @@ export const QuantumDBProvider = ({ children }) => {
       addFaculty,
       addStudent,
       deleteRecord,
+      confirmDelete,
       removeCourseCompletion,
       removeCertificateRecipient,
       removeProjectParticipant,
@@ -521,6 +565,13 @@ export const QuantumDBProvider = ({ children }) => {
       resetSeedData
     }}>
       {children}
+      <ConfirmDeleteModal
+        isOpen={deleteModalState.isOpen}
+        title={deleteModalState.title}
+        message={deleteModalState.message}
+        onConfirm={deleteModalState.onConfirm}
+        onClose={closeDeleteModal}
+      />
     </QuantumDBContext.Provider>
   );
 };

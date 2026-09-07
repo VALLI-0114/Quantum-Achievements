@@ -4,7 +4,7 @@ import { useQuantumDB } from '../../data/db';
 import { downloadCategoryReportPDF, downloadPaperReportPDF } from '../../utils/pdfGenerator';
 
 export const FacultyPapers = ({ onOpenProfile, onAddPaper }) => {
-  const { researchPapers, faculty, students, deleteRecord, removePaperAuthor } = useQuantumDB();
+  const { researchPapers, faculty, students, deleteRecord, confirmDelete, removePaperAuthor } = useQuantumDB();
   const [selectedPaperId, setSelectedPaperId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -91,10 +91,14 @@ export const FacultyPapers = ({ onOpenProfile, onAddPaper }) => {
               <button
                 className="btn btn-danger"
                 onClick={() => {
-                  if (window.confirm(`Are you sure you want to delete "${selectedPaper.title}"?`)) {
-                    deleteRecord('researchPapers', selectedPaper.id);
-                    setSelectedPaperId(null);
-                  }
+                  confirmDelete({
+                    title: selectedPaper.title,
+                    message: `Are you sure you want to delete paper "${selectedPaper.title}"?`,
+                    onConfirm: () => {
+                      deleteRecord('researchPapers', selectedPaper.id);
+                      setSelectedPaperId(null);
+                    }
+                  });
                 }}
               >
                 <Trash2 size={16} /> Delete Paper
@@ -159,9 +163,11 @@ export const FacultyPapers = ({ onOpenProfile, onAddPaper }) => {
                       className="btn-icon-danger"
                       title="Remove Faculty Author"
                       onClick={() => {
-                        if (window.confirm(`Remove ${f.name} from this paper?`)) {
-                          removePaperAuthor(selectedPaper.id, 'faculty', f.id);
-                        }
+                        confirmDelete({
+                          title: `Remove ${f.name}`,
+                          message: `Remove ${f.name} from this paper?`,
+                          onConfirm: () => removePaperAuthor(selectedPaper.id, 'faculty', f.id)
+                        });
                       }}
                     >
                       <Trash2 size={15} />
@@ -193,9 +199,11 @@ export const FacultyPapers = ({ onOpenProfile, onAddPaper }) => {
                           className="btn-icon-danger"
                           title="Remove Student Author"
                           onClick={() => {
-                            if (window.confirm(`Remove ${s.name} from this paper?`)) {
-                              removePaperAuthor(selectedPaper.id, 'student', s.id);
-                            }
+                            confirmDelete({
+                              title: `Remove ${s.name}`,
+                              message: `Remove ${s.name} from this paper?`,
+                              onConfirm: () => removePaperAuthor(selectedPaper.id, 'student', s.id)
+                            });
                           }}
                         >
                           <Trash2 size={15} />
@@ -271,9 +279,12 @@ export const FacultyPapers = ({ onOpenProfile, onAddPaper }) => {
                       title="Delete Research Paper"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (window.confirm(`Are you sure you want to delete "${paper.title}"?`)) {
-                          deleteRecord('researchPapers', paper.id);
-                        }
+                        e.preventDefault();
+                        confirmDelete({
+                          title: paper.title,
+                          message: `Are you sure you want to delete "${paper.title}"?`,
+                          onConfirm: () => deleteRecord('researchPapers', paper.id)
+                        });
                       }}
                     >
                       <Trash2 size={15} />

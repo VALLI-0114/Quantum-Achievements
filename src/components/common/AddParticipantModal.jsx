@@ -123,7 +123,6 @@ export const AddParticipantModal = ({
         certificateId: completionData.certificateId,
         uploadedFile: completionData.uploadedFile
       });
-      alert(`Successfully added ${cleanName} to ${entityCode || entityTitle}!`);
     } else {
       addCertificateRecipient(entityId, isStudent ? 'students' : 'faculty', targetPersonId, {
         issueDate: completionData.completionDate,
@@ -131,7 +130,6 @@ export const AddParticipantModal = ({
         credentialId: completionData.certificateId,
         uploadedFile: completionData.uploadedFile
       });
-      alert(`Successfully registered ${cleanName} as recipient for ${entityTitle}!`);
     }
 
     onClose();

@@ -315,9 +315,8 @@ export const AddAchievementModal = ({
         studentEnrolled: []
       };
       addCourse(newCourse, newFacultyList, newStudentsList);
-      alert(`Quantum Course achievement added to ${audience === 'faculty' ? 'Faculty' : 'Student'} section!`);
     } else if (activeTab === 'certificates') {
-      if (!certForm.title) return alert('Please enter the certificate title');
+      if (!certForm.title) return;
 
       let recipientId = null;
       if (certForm.recipientName) {
@@ -353,9 +352,8 @@ export const AddAchievementModal = ({
         }] : []
       };
       addCertificate(newCert, newFacultyList, newStudentsList);
-      alert(`Certificate achievement added to ${audience === 'faculty' ? 'Faculty' : 'Student'} section!`);
     } else if (activeTab === 'projects') {
-      if (!projectForm.title) return alert('Please enter project title');
+      if (!projectForm.title) return;
 
       // Process Faculty Lead
       const facInvolved = [];
@@ -419,10 +417,8 @@ export const AddAchievementModal = ({
         facultyInvolved: facInvolved,
         studentsInvolved: stuInvolved
       }, newFacultyList, newStudentsList);
-
-      alert(`Quantum Project record created with ${stuInvolved.length} student developers and ${facInvolved.length} faculty advisors!`);
     } else if (activeTab === 'papers') {
-      if (!paperForm.title) return alert('Please enter publication title');
+      if (!paperForm.title) return;
 
       const facAuthors = [];
       if (paperForm.facultyAuthorName && paperForm.facultyAuthorName.trim()) {
@@ -447,10 +443,8 @@ export const AddAchievementModal = ({
         facultyAuthors: facAuthors,
         studentAuthors: stuAuthors
       }, newFacultyList, newStudentsList);
-
-      alert('Research Publication registered!');
     } else if (activeTab === 'hackathons') {
-      if (!hackathonForm.name) return alert('Please enter hackathon name');
+      if (!hackathonForm.name) return;
 
       const facParticipants = [];
       const stuParticipants = [];
@@ -522,8 +516,6 @@ export const AddAchievementModal = ({
         facultyParticipants: facParticipants,
         studentParticipants: stuParticipants
       }, newFacultyList, newStudentsList);
-
-      alert(`Hackathon achievement added to ${audience === 'faculty' ? 'Faculty' : 'Student'} section!`);
     }
 
     onClose();

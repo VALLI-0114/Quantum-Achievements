@@ -38,6 +38,8 @@ export const QuantumDBProvider = ({ children }) => {
 
   const [cloudStatus, setCloudStatus] = useState('connecting'); // 'connecting' | 'synced' | 'syncing' | 'table_needed' | 'offline'
   const isInitialCloudLoad = useRef(true);
+  const lastSyncedJson = useRef('');
+  const isRemoteUpdate = useRef(false);
 
   // 1. Initial Load from Supabase Cloud
   useEffect(() => {
@@ -62,12 +64,15 @@ export const QuantumDBProvider = ({ children }) => {
 
         if (cloudRow && cloudRow.data) {
           if (isMounted) {
+            const rowJson = JSON.stringify(cloudRow.data);
+            lastSyncedJson.current = rowJson;
             setData(cloudRow.data);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudRow.data));
+            localStorage.setItem(STORAGE_KEY, rowJson);
             setCloudStatus('synced');
           }
         } else {
           // No cloud row exists yet -> upload initial data
+          const currentJson = JSON.stringify(data);
           const { error: insertErr } = await supabase
             .from('quantum_portal_data')
             .upsert({
@@ -83,6 +88,7 @@ export const QuantumDBProvider = ({ children }) => {
               if (isMounted) setCloudStatus('offline');
             }
           } else {
+            lastSyncedJson.current = currentJson;
             if (isMounted) setCloudStatus('synced');
           }
         }
@@ -106,8 +112,14 @@ export const QuantumDBProvider = ({ children }) => {
         filter: 'id=eq.main_state'
       }, (payload) => {
         if (payload.new && payload.new.data && isMounted) {
-          setData(payload.new.data);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(payload.new.data));
+          const incomingJson = JSON.stringify(payload.new.data);
+          // Only update if incoming data is actually different from our current synced state
+          if (incomingJson !== lastSyncedJson.current) {
+            isRemoteUpdate.current = true;
+            lastSyncedJson.current = incomingJson;
+            setData(payload.new.data);
+            localStorage.setItem(STORAGE_KEY, incomingJson);
+          }
           setCloudStatus('synced');
         }
       })
@@ -121,10 +133,24 @@ export const QuantumDBProvider = ({ children }) => {
 
   // 3. Save to localStorage and Push to Supabase on Local State Change
   useEffect(() => {
+    const currentJson = JSON.stringify(data);
+
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      localStorage.setItem(STORAGE_KEY, currentJson);
     } catch (e) {
       console.error("LocalStorage save error:", e);
+    }
+
+    // Skip cloud sync if this state update was triggered by an incoming remote change
+    if (isRemoteUpdate.current) {
+      isRemoteUpdate.current = false;
+      return;
+    }
+
+    // If data is already in sync with cloud, no need to push
+    if (currentJson === lastSyncedJson.current) {
+      setCloudStatus('synced');
+      return;
     }
 
     if (!isInitialCloudLoad.current) {
@@ -146,6 +172,7 @@ export const QuantumDBProvider = ({ children }) => {
               setCloudStatus('offline');
             }
           } else {
+            lastSyncedJson.current = currentJson;
             setCloudStatus('synced');
           }
         } catch (e) {

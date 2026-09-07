@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, UserPlus, UploadCloud, FileCheck, CheckCircle2, User, Award, BookOpen } from 'lucide-react';
+import { X, Plus, UserPlus, UploadCloud, FileCheck, User } from 'lucide-react';
 import { useQuantumDB } from '../../data/db';
 
 export const AddParticipantModal = ({
@@ -23,13 +23,10 @@ export const AddParticipantModal = ({
   const isStudent = audienceType === 'student';
   const isCourse = targetType === 'course';
 
-  const [mode, setMode] = useState('existing'); // 'existing' | 'new'
-  const [selectedPersonId, setSelectedPersonId] = useState('');
-  
-  // New candidate fields
-  const [newPerson, setNewPerson] = useState({
+  // Candidate fields (direct text writing)
+  const [personData, setPersonData] = useState({
     name: '',
-    department: 'Information Technology',
+    department: 'Computer Science & Engineering',
     studentId: `QU-2026-${Math.floor(100 + Math.random() * 900)}`,
     year: '4th Year B.Tech',
     title: 'Assistant Professor',
@@ -73,47 +70,48 @@ export const AddParticipantModal = ({
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    let targetPersonId = selectedPersonId;
+    if (!personData.name.trim()) {
+      alert(`Please enter ${isStudent ? 'student' : 'faculty'} full name`);
+      return;
+    }
 
-    // If creating a brand new person
-    if (mode === 'new') {
-      if (!newPerson.name.trim()) {
-        alert('Please enter candidate full name');
-        return;
-      }
+    const cleanName = personData.name.trim();
+    let targetPersonId = '';
 
-      if (isStudent) {
+    if (isStudent) {
+      const existing = students.find(s => s.name.toLowerCase() === cleanName.toLowerCase());
+      if (existing) {
+        targetPersonId = existing.id;
+      } else {
         const newStuId = `STU-${Date.now().toString().slice(-4)}`;
         const createdStudent = {
           id: newStuId,
-          name: newPerson.name,
-          department: newPerson.department,
-          studentId: newPerson.studentId,
-          year: newPerson.year,
-          email: newPerson.email || `${newPerson.name.toLowerCase().replace(/\s+/g, '.')}@student.quantum-hub.edu`,
-          highestHonor: 'Quantum Certified Candidate',
-          quantumSpecialization: 'Quantum Algorithms & NISQ'
+          name: cleanName,
+          department: personData.department,
+          studentId: personData.studentId || `QU-${Math.floor(1000 + Math.random() * 9000)}`,
+          year: personData.year || 'Student',
+          email: personData.email || `${cleanName.toLowerCase().replace(/\s+/g, '.')}@student.quantum-hub.edu`,
+          avatar: cleanName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
         };
         addStudent(createdStudent);
         targetPersonId = newStuId;
+      }
+    } else {
+      const existing = faculty.find(f => f.name.toLowerCase() === cleanName.toLowerCase());
+      if (existing) {
+        targetPersonId = existing.id;
       } else {
         const newFacId = `FAC-${Date.now().toString().slice(-4)}`;
         const createdFaculty = {
           id: newFacId,
-          name: newPerson.name,
-          department: newPerson.department,
-          title: newPerson.title || 'Professor',
-          email: newPerson.email || `${newPerson.name.toLowerCase().replace(/\s+/g, '.')}@faculty.quantum-hub.edu`,
-          highestHonor: 'Senior Quantum Fellow',
-          quantumSpecialization: 'Quantum Information & Architecture'
+          name: cleanName,
+          department: personData.department,
+          title: personData.title || 'Faculty Researcher',
+          email: personData.email || `${cleanName.toLowerCase().replace(/\s+/g, '.')}@faculty.quantum-hub.edu`,
+          avatar: cleanName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
         };
         addFaculty(createdFaculty);
         targetPersonId = newFacId;
-      }
-    } else {
-      if (!selectedPersonId) {
-        alert(`Please select a ${isStudent ? 'student' : 'faculty member'} from the list`);
-        return;
       }
     }
 
@@ -125,7 +123,7 @@ export const AddParticipantModal = ({
         certificateId: completionData.certificateId,
         uploadedFile: completionData.uploadedFile
       });
-      alert(`Successfully registered ${isStudent ? 'Student' : 'Faculty'} completion for ${entityCode || entityTitle}!`);
+      alert(`Successfully added ${cleanName} to ${entityCode || entityTitle}!`);
     } else {
       addCertificateRecipient(entityId, isStudent ? 'students' : 'faculty', targetPersonId, {
         issueDate: completionData.completionDate,
@@ -133,7 +131,7 @@ export const AddParticipantModal = ({
         credentialId: completionData.certificateId,
         uploadedFile: completionData.uploadedFile
       });
-      alert(`Successfully added ${isStudent ? 'Student' : 'Faculty'} recipient to certificate ${entityTitle}!`);
+      alert(`Successfully registered ${cleanName} as recipient for ${entityTitle}!`);
     }
 
     onClose();
@@ -172,136 +170,80 @@ export const AddParticipantModal = ({
 
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="modal-body">
-            {/* Mode Toggle: Existing vs New */}
+            {/* Person Information Writing Section */}
             <div style={{
-              display: 'flex',
-              gap: '1rem',
-              marginBottom: '1.25rem',
-              background: 'var(--bg-surface-subtle)',
-              padding: '0.4rem',
-              borderRadius: '10px',
-              border: '1px solid var(--border-light)'
+              background: isStudent ? '#F8FAFC' : '#FAF5FF',
+              border: '1px solid var(--border-light)',
+              borderRadius: '12px',
+              padding: '1.25rem',
+              marginBottom: '1.25rem'
             }}>
-              <button
-                type="button"
-                className={`btn btn-sm ${mode === 'existing' ? (isStudent ? 'btn-primary' : 'btn-secondary') : 'btn-outline'}`}
-                style={{ flex: 1, border: 'none' }}
-                onClick={() => setMode('existing')}
-              >
-                <User size={14} /> Select Registered {isStudent ? 'Student' : 'Faculty'}
-              </button>
-              <button
-                type="button"
-                className={`btn btn-sm ${mode === 'new' ? (isStudent ? 'btn-primary' : 'btn-secondary') : 'btn-outline'}`}
-                style={{ flex: 1, border: 'none' }}
-                onClick={() => setMode('new')}
-              >
-                <UserPlus size={14} /> ➕ Register & Add New {isStudent ? 'Student' : 'Faculty'}
-              </button>
+              <h4 style={{ fontSize: '0.95rem', color: isStudent ? 'var(--primary)' : 'var(--secondary)', marginBottom: '0.85rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <User size={16} />
+                {isStudent ? 'Student Candidate Details' : 'Faculty Member Details'}
+              </h4>
+
+              <div className="form-grid-2">
+                <div className="form-group">
+                  <label className="form-label">{isStudent ? 'Student Full Name' : 'Faculty Full Name'}</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder={isStudent ? 'e.g. Alex Rivera' : 'e.g. Dr. Sarah Lin'}
+                    value={personData.name}
+                    onChange={(e) => setPersonData({ ...personData, name: e.target.value })}
+                    required
+                    autoFocus
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">{isStudent ? 'Roll Number / Student ID' : 'Designation / Faculty ID'}</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder={isStudent ? 'e.g. QU-2026-0199' : 'e.g. Associate Professor'}
+                    value={isStudent ? personData.studentId : personData.title}
+                    onChange={(e) => setPersonData({ ...personData, [isStudent ? 'studentId' : 'title']: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-grid-2">
+                <div className="form-group">
+                  <label className="form-label">Academic Department</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. Information Technology / Computer Science"
+                    value={personData.department}
+                    onChange={(e) => setPersonData({ ...personData, department: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">{isStudent ? 'Year / Academic Standing' : 'Institutional Email'}</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder={isStudent ? 'e.g. 4th Year B.Tech' : 'e.g. sarah.lin@quantum-hub.edu'}
+                    value={isStudent ? personData.year : personData.email}
+                    onChange={(e) => setPersonData({ ...personData, [isStudent ? 'year' : 'email']: e.target.value })}
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Mode 1: Select Existing Candidate */}
-            {mode === 'existing' ? (
-              <div className="form-group">
-                <label className="form-label">
-                  Select {isStudent ? 'Student Candidate' : 'Faculty Member'}
-                </label>
-                <select
-                  className="form-select"
-                  value={selectedPersonId}
-                  onChange={(e) => setSelectedPersonId(e.target.value)}
-                  required
-                >
-                  <option value="">-- Choose {isStudent ? 'Student' : 'Faculty Member'} --</option>
-                  {isStudent
-                    ? students.map(s => (
-                        <option key={s.id} value={s.id}>
-                          {s.name} ({s.studentId}) — {s.department} [{s.year || 'Student'}]
-                        </option>
-                      ))
-                    : faculty.map(f => (
-                        <option key={f.id} value={f.id}>
-                          {f.name} ({f.title}) — {f.department}
-                        </option>
-                      ))
-                  }
-                </select>
-              </div>
-            ) : (
-              /* Mode 2: Add Brand New Candidate */
-              <div style={{
-                background: isStudent ? '#F8FAFC' : '#FAF5FF',
-                border: '1px solid var(--border-light)',
-                borderRadius: '10px',
-                padding: '1.25rem',
-                marginBottom: '1.25rem'
-              }}>
-                <h4 style={{ fontSize: '0.9rem', color: isStudent ? 'var(--primary)' : 'var(--secondary)', marginBottom: '0.75rem', fontWeight: 700 }}>
-                  New {isStudent ? 'Student Candidate' : 'Faculty Member'} Information
-                </h4>
-
-                <div className="form-grid-2">
-                  <div className="form-group">
-                    <label className="form-label">Full Name</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="e.g. S. Harini"
-                      value={newPerson.name}
-                      onChange={(e) => setNewPerson({ ...newPerson, name: e.target.value })}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">{isStudent ? 'Roll Number / Student ID' : 'Designation / Title'}</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder={isStudent ? 'e.g. QU-2026-0199' : 'e.g. Associate Professor'}
-                      value={isStudent ? newPerson.studentId : newPerson.title}
-                      onChange={(e) => setNewPerson({ ...newPerson, [isStudent ? 'studentId' : 'title']: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="form-grid-2">
-                  <div className="form-group">
-                    <label className="form-label">Academic Department</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="e.g. Information Technology / Computer Science"
-                      value={newPerson.department}
-                      onChange={(e) => setNewPerson({ ...newPerson, department: e.target.value })}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">{isStudent ? 'Year / Academic Standing' : 'Institutional Email'}</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder={isStudent ? 'e.g. 4th Year B.Tech' : 'faculty@quantum-hub.edu'}
-                      value={isStudent ? newPerson.year : newPerson.email}
-                      onChange={(e) => setNewPerson({ ...newPerson, [isStudent ? 'year' : 'email']: e.target.value })}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Achievement Roster Details */}
+            {/* Achievement Roster & Certificate Details */}
             <div style={{
               background: '#FFFFFF',
               border: '1px solid var(--border-light)',
-              borderRadius: '10px',
-              padding: '1.25rem',
-              marginTop: '0.5rem'
+              borderRadius: '12px',
+              padding: '1.25rem'
             }}>
-              <h4 style={{ fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '0.75rem', fontWeight: 700 }}>
+              <h4 style={{ fontSize: '0.95rem', color: 'var(--text-primary)', marginBottom: '0.85rem', fontWeight: 700 }}>
                 Completion & Verification Credentials
               </h4>
 
@@ -345,7 +287,7 @@ export const AddParticipantModal = ({
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}>
                   <UploadCloud size={15} style={{ color: isStudent ? 'var(--primary)' : 'var(--secondary)' }} />
-                  Attach Certificate File (PDF / Image)
+                  Attach Certificate File (PDF / Image) (Optional)
                 </label>
 
                 {!completionData.uploadedFile ? (

@@ -7,7 +7,6 @@ import {
   FileText,
   Award,
   Trophy,
-  BarChart3,
   Sparkles
 } from 'lucide-react';
 
@@ -16,11 +15,10 @@ export const Sidebar = ({ activeView, onViewChange, isOpen, onClose }) => {
     { id: 'home', label: 'Overview', icon: LayoutDashboard },
     { id: 'faculty', label: 'Faculty Achievements', icon: Users, badge: 'DBMS', badgeColor: 'secondary' },
     { id: 'student', label: 'Student Achievements', icon: GraduationCap, badge: 'DBMS', badgeColor: 'primary' },
-    { id: 'projects', label: 'Quantum Projects', icon: Layers, count: '4' },
-    { id: 'research', label: 'Research Publications', icon: FileText, count: '4' },
-    { id: 'certificates', label: 'Certificates Gallery', icon: Award, count: '4' },
-    { id: 'hackathons', label: 'Hackathons & Contests', icon: Trophy, count: '3' },
-    { id: 'analytics', label: 'Analytics & Readiness', icon: BarChart3, badge: '78%' }
+    { id: 'projects', label: 'Quantum Projects', icon: Layers },
+    { id: 'research', label: 'Research Publications', icon: FileText },
+    { id: 'certificates', label: 'Certificates Gallery', icon: Award },
+    { id: 'hackathons', label: 'Hackathons & Contests', icon: Trophy }
   ];
 
   return (

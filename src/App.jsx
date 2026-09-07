@@ -9,7 +9,6 @@ import { FacultyProjects } from './components/faculty/FacultyProjects';
 import { FacultyPapers } from './components/faculty/FacultyPapers';
 import { FacultyCertificates } from './components/faculty/FacultyCertificates';
 import { StudentHackathons } from './components/students/StudentHackathons';
-import { AnalyticsSection } from './components/analytics/AnalyticsSection';
 import { CertificateModal } from './components/common/CertificateModal';
 import { ProfileModal } from './components/common/ProfileModal';
 import { AddAchievementModal } from './components/common/AddAchievementModal';
@@ -158,10 +157,6 @@ const MainContent = () => {
               onAddHackathon={() => handleOpenAddModal('hackathons', 'students')}
             />
           </div>
-        )}
-
-        {activeView === 'analytics' && (
-          <AnalyticsSection />
         )}
       </main>
 

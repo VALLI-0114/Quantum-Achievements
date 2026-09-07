@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { supabase } from '../lib/supabase';
 import {
   INITIAL_FACULTY,
   INITIAL_STUDENTS,
@@ -34,12 +35,128 @@ export const QuantumDBProvider = ({ children }) => {
     };
   });
 
-  // Save to localStorage on change
+  const [cloudStatus, setCloudStatus] = useState('connecting'); // 'connecting' | 'synced' | 'syncing' | 'table_needed' | 'offline'
+  const isInitialCloudLoad = useRef(true);
+
+  // 1. Initial Load from Supabase Cloud
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchFromSupabase = async () => {
+      try {
+        const { data: cloudRow, error } = await supabase
+          .from('quantum_portal_data')
+          .select('data, updated_at')
+          .eq('id', 'main_state')
+          .maybeSingle();
+
+        if (error) {
+          if (error.code === 'PGRST205' || error.code === '42P01') {
+            if (isMounted) setCloudStatus('table_needed');
+          } else {
+            if (isMounted) setCloudStatus('offline');
+          }
+          return;
+        }
+
+        if (cloudRow && cloudRow.data) {
+          if (isMounted) {
+            setData(cloudRow.data);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudRow.data));
+            setCloudStatus('synced');
+          }
+        } else {
+          // No cloud row exists yet -> upload initial data
+          const { error: insertErr } = await supabase
+            .from('quantum_portal_data')
+            .upsert({
+              id: 'main_state',
+              data: data,
+              updated_at: new Date().toISOString()
+            });
+
+          if (insertErr) {
+            if (insertErr.code === 'PGRST205' || insertErr.code === '42P01') {
+              if (isMounted) setCloudStatus('table_needed');
+            } else {
+              if (isMounted) setCloudStatus('offline');
+            }
+          } else {
+            if (isMounted) setCloudStatus('synced');
+          }
+        }
+      } catch (e) {
+        console.warn("Supabase initial load error:", e);
+        if (isMounted) setCloudStatus('offline');
+      } finally {
+        isInitialCloudLoad.current = false;
+      }
+    };
+
+    fetchFromSupabase();
+
+    // 2. Realtime Subscription across all devices
+    const channel = supabase
+      .channel('quantum_realtime_broadcast')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'quantum_portal_data',
+        filter: 'id=eq.main_state'
+      }, (payload) => {
+        if (payload.new && payload.new.data && isMounted) {
+          setData(payload.new.data);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(payload.new.data));
+          setCloudStatus('synced');
+        }
+      })
+      .subscribe();
+
+    return () => {
+      isMounted = false;
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // 3. Save to localStorage and Push to Supabase on Local State Change
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (e) {
       console.error("LocalStorage save error:", e);
+    }
+
+    if (!isInitialCloudLoad.current) {
+      const syncToCloud = async () => {
+        try {
+          setCloudStatus('syncing');
+          const { error } = await supabase
+            .from('quantum_portal_data')
+            .upsert({
+              id: 'main_state',
+              data: data,
+              updated_at: new Date().toISOString()
+            });
+
+          if (error) {
+            if (error.code === 'PGRST205' || error.code === '42P01') {
+              setCloudStatus('table_needed');
+            } else {
+              setCloudStatus('offline');
+            }
+          } else {
+            setCloudStatus('synced');
+          }
+        } catch (e) {
+          setCloudStatus('offline');
+        }
+      };
+
+      const timer = setTimeout(() => {
+        syncToCloud();
+      }, 300);
+
+      return () => clearTimeout(timer);
     }
   }, [data]);
 
@@ -381,6 +498,8 @@ export const QuantumDBProvider = ({ children }) => {
       projects: data.projects,
       researchPapers: data.researchPapers,
       hackathons: data.hackathons,
+      cloudStatus,
+      supabase,
       getFacultyById,
       getStudentById,
       addCourse,

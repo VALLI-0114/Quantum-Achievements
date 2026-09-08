@@ -76,25 +76,23 @@ export const OverviewSection = ({ onNavigate }) => {
             marginBottom: '1rem',
             border: '1px solid #BFDBFE'
           }}>
-            <Sparkles size={14} /> Official Quantum Contributions & DBMS Portal
+            <Sparkles size={14} /> Quantum Contributions Portal
           </div>
 
           <h1 style={{
             fontFamily: 'var(--font-heading)',
-            fontSize: '2.5rem',
+            fontSize: '2.85rem',
             fontWeight: 800,
-            color: 'var(--text-primary)',
             lineHeight: 1.15,
             marginBottom: '1rem',
             letterSpacing: '-0.03em'
           }}>
-            Quantum Learning.<br />
             <span style={{
               background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent'
             }}>
-              Research. Contributions.
+              Quantum Contributions
             </span>
           </h1>
 

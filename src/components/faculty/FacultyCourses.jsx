@@ -504,17 +504,10 @@ export const FacultyCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }
                   marginTop: 'auto',
                   border: '1px solid var(--border-light)'
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Total Faculty Completed:</span>
                     <strong style={{ fontSize: '0.95rem', color: 'var(--secondary)' }}>
                       {completedCount} Faculty
-                    </strong>
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Currently Enrolled / In-Progress:</span>
-                    <strong style={{ fontSize: '0.85rem', color: 'var(--primary)' }}>
-                      {enrolledCount} Enrolled
                     </strong>
                   </div>
                 </div>

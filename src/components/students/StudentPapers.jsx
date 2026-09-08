@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
-import { FileText, ArrowLeft, Search, User, FileDown, Download, Trash2 } from 'lucide-react';
+import { FileText, ArrowLeft, Search, User, FileDown, Download, Trash2, Edit3, UserPlus, Plus } from 'lucide-react';
 import { useQuantumDB } from '../../data/db';
 import { downloadCategoryReportPDF, downloadPaperReportPDF } from '../../utils/pdfGenerator';
+import { EditPaperModal } from '../common/EditPaperModal';
+import { AddAuthorModal } from '../common/AddAuthorModal';
 
 export const StudentPapers = ({ onOpenProfile, onAddPaper }) => {
   const { researchPapers, students, faculty, deleteRecord, confirmDelete, removePaperAuthor } = useQuantumDB();
   const [selectedPaperId, setSelectedPaperId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingPaper, setEditingPaper] = useState(null);
+  const [isAddAuthorOpen, setIsAddAuthorOpen] = useState(false);
+  const [addAuthorRoleType, setAddAuthorRoleType] = useState('student');
 
   const selectedPaper = researchPapers.find(p => p.id === selectedPaperId);
 
@@ -94,6 +99,13 @@ export const StudentPapers = ({ onOpenProfile, onAddPaper }) => {
             </div>
 
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setEditingPaper(selectedPaper)}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+              >
+                <Edit3 size={15} /> Edit Paper
+              </button>
               <button className="btn btn-outline" onClick={handleDownloadSinglePaperPDF}>
                 <Download size={16} /> Download Paper PDF
               </button>
@@ -137,9 +149,22 @@ export const StudentPapers = ({ onOpenProfile, onAddPaper }) => {
 
         {/* Student Authors */}
         <div>
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1rem' }}>
-            Student Authors ({stuAuthors.length})
-          </h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+              Student Authors ({stuAuthors.length})
+            </h3>
+            <button
+              className="btn btn-outline btn-sm"
+              onClick={() => {
+                setAddAuthorRoleType('student');
+                setIsAddAuthorOpen(true);
+              }}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+            >
+              <UserPlus size={14} /> + Add Student Author
+            </button>
+          </div>
+
           <div className="cards-grid-2" style={{ marginBottom: '1.5rem' }}>
             {stuAuthors.map(s => (
               <div key={s.id} className="item-card" style={{ padding: '1.25rem' }}>
@@ -188,44 +213,82 @@ export const StudentPapers = ({ onOpenProfile, onAddPaper }) => {
           </div>
 
           {/* Faculty Mentors */}
-          {facMentors.length > 0 && (
-            <>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1rem' }}>
-                Faculty Mentors & Research Directors ({facMentors.length})
-              </h3>
-              <div className="cards-grid-2">
-                {facMentors.map(f => (
-                  <div key={f.id} className="item-card" style={{ padding: '1.25rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <strong style={{ fontSize: '0.95rem' }}>{f.name}</strong>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{f.department}</div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <button className="btn btn-outline btn-sm" onClick={() => onOpenProfile(f.id, 'faculty')}>
-                          <User size={14} /> Profile
-                        </button>
-                        <button
-                          className="btn-icon-danger"
-                          title="Remove Faculty Mentor"
-                          onClick={() => {
-                            confirmDelete({
-                              title: `Remove ${f.name}`,
-                              message: `Remove ${f.name} from this paper?`,
-                              onConfirm: () => removePaperAuthor(selectedPaper.id, 'faculty', f.id)
-                            });
-                          }}
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', marginTop: '1.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+              Faculty Mentors & Research Directors ({facMentors.length})
+            </h3>
+            <button
+              className="btn btn-outline btn-sm"
+              onClick={() => {
+                setAddAuthorRoleType('faculty');
+                setIsAddAuthorOpen(true);
+              }}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+            >
+              <UserPlus size={14} /> + Add Faculty Mentor
+            </button>
+          </div>
+
+          <div className="cards-grid-2">
+            {facMentors.length === 0 ? (
+              <div style={{
+                gridColumn: '1 / -1',
+                padding: '1.5rem',
+                textAlign: 'center',
+                background: 'var(--bg-surface-subtle)',
+                borderRadius: '12px',
+                border: '1px dashed var(--border-light)',
+                color: 'var(--text-muted)',
+                fontSize: '0.88rem'
+              }}>
+                No faculty mentors currently assigned to this student publication.
+              </div>
+            ) : (
+              facMentors.map(f => (
+                <div key={f.id} className="item-card" style={{ padding: '1.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <strong style={{ fontSize: '0.95rem' }}>{f.name}</strong>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{f.department}</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <button className="btn btn-outline btn-sm" onClick={() => onOpenProfile(f.id, 'faculty')}>
+                        <User size={14} /> Profile
+                      </button>
+                      <button
+                        className="btn-icon-danger"
+                        title="Remove Faculty Mentor"
+                        onClick={() => {
+                          confirmDelete({
+                            title: `Remove ${f.name}`,
+                            message: `Remove ${f.name} from this paper?`,
+                            onConfirm: () => removePaperAuthor(selectedPaper.id, 'faculty', f.id)
+                          });
+                        }}
+                      >
+                        <Trash2 size={15} />
+                      </button>
                     </div>
                   </div>
-                ))}
-              </div>
-            </>
-          )}
+                </div>
+              ))
+            )}
+          </div>
         </div>
+
+        {/* Modals */}
+        <EditPaperModal
+          isOpen={!!editingPaper}
+          onClose={() => setEditingPaper(null)}
+          paper={editingPaper}
+        />
+        <AddAuthorModal
+          isOpen={isAddAuthorOpen}
+          onClose={() => setIsAddAuthorOpen(false)}
+          paperId={selectedPaper.id}
+          paperTitle={selectedPaper.title}
+          initialRoleType={addAuthorRoleType}
+        />
       </div>
     );
   }
@@ -285,6 +348,25 @@ export const StudentPapers = ({ onOpenProfile, onAddPaper }) => {
                   <div className="card-header-meta">
                     <span className="metric-pill secondary" style={{ fontSize: '0.74rem' }}>{paper.citations || 0} Citations</span>
                     <button
+                      className="btn-icon"
+                      title="Edit Paper Details"
+                      style={{
+                        flexShrink: 0,
+                        padding: '4px',
+                        background: 'var(--primary-light)',
+                        color: 'var(--primary)',
+                        border: '1px solid var(--border-light)',
+                        borderRadius: '6px'
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        setEditingPaper(paper);
+                      }}
+                    >
+                      <Edit3 size={13} />
+                    </button>
+                    <button
                       className="btn-icon-danger"
                       title="Delete Research Paper"
                       style={{ flexShrink: 0 }}
@@ -334,6 +416,13 @@ export const StudentPapers = ({ onOpenProfile, onAddPaper }) => {
           })
         )}
       </div>
+
+      {/* Modals for List View */}
+      <EditPaperModal
+        isOpen={!!editingPaper}
+        onClose={() => setEditingPaper(null)}
+        paper={editingPaper}
+      />
     </div>
   );
 };

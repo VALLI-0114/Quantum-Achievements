@@ -1395,6 +1395,78 @@ export const QuantumDBProvider = ({ children }) => {
     });
   };
 
+  const updateResearchPaper = (paperId, updatedFields, newFacultyList = [], newStudentsList = []) => {
+    const matchId = String(paperId);
+    updateDataAndSync(prev => {
+      const existingFacIds = new Set(prev.faculty.map(f => f.id));
+      const existingStuIds = new Set(prev.students.map(s => s.id));
+      const filteredNewFac = (newFacultyList || []).filter(f => f && f.id && !existingFacIds.has(f.id));
+      const filteredNewStu = (newStudentsList || []).filter(s => s && s.id && !existingStuIds.has(s.id));
+
+      const updatedPapers = prev.researchPapers.map(rp => {
+        if (String(rp.id) === matchId) {
+          return {
+            ...rp,
+            ...updatedFields,
+            id: rp.id
+          };
+        }
+        return rp;
+      });
+
+      return {
+        ...prev,
+        faculty: [...filteredNewFac, ...prev.faculty],
+        students: [...filteredNewStu, ...prev.students],
+        researchPapers: updatedPapers
+      };
+    });
+  };
+
+  const addResearchPaperAuthor = (paperId, roleType, personId, personData = null) => {
+    const matchPaper = String(paperId);
+    const matchPerson = String(personId);
+
+    updateDataAndSync(prev => {
+      let nextFaculty = [...prev.faculty];
+      let nextStudents = [...prev.students];
+
+      if (personData) {
+        if (roleType === 'faculty' && !nextFaculty.some(f => f.id === matchPerson)) {
+          nextFaculty = [{ ...personData, id: matchPerson }, ...nextFaculty];
+        } else if (roleType === 'student' && !nextStudents.some(s => s.id === matchPerson)) {
+          nextStudents = [{ ...personData, id: matchPerson }, ...nextStudents];
+        }
+      }
+
+      const updatedPapers = prev.researchPapers.map(rp => {
+        if (String(rp.id) !== matchPaper) return rp;
+        if (roleType === 'faculty') {
+          const currentFac = rp.facultyAuthors || [];
+          if (currentFac.some(fa => String(fa.facultyId || fa) === matchPerson)) return rp;
+          return {
+            ...rp,
+            facultyAuthors: [...currentFac, matchPerson]
+          };
+        } else {
+          const currentStu = rp.studentAuthors || [];
+          if (currentStu.some(sa => String(sa.studentId || sa) === matchPerson)) return rp;
+          return {
+            ...rp,
+            studentAuthors: [...currentStu, matchPerson]
+          };
+        }
+      });
+
+      return {
+        ...prev,
+        faculty: nextFaculty,
+        students: nextStudents,
+        researchPapers: updatedPapers
+      };
+    });
+  };
+
   // 5. Hackathon Management
   const addHackathon = (newHackathon, newFacultyList = [], newStudentsList = []) => {
     updateDataAndSync(prev => {
@@ -1685,6 +1757,8 @@ export const QuantumDBProvider = ({ children }) => {
       addCertificateRecipient,
       addProject,
       addResearchPaper,
+      updateResearchPaper,
+      addResearchPaperAuthor,
       addHackathon,
       addFaculty,
       addStudent,

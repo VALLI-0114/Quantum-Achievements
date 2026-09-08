@@ -25,6 +25,29 @@ export const OverviewSection = ({ onNavigate }) => {
   const totalProjects = projects.length;
   const totalPapers = researchPapers.length;
   const totalHackathons = hackathons.length;
+  const totalAchievements = totalCourses + totalCertificates + totalProjects + totalPapers + totalHackathons;
+
+  // Active faculty who have registered completions, projects, papers, or certificates
+  const activeFacultyIds = new Set([
+    ...courses.flatMap(c => (c.facultyCompletions || []).map(fc => fc.facultyId).concat((c.facultyEnrolled || []).map(fe => fe.facultyId))),
+    ...certificates.flatMap(c => (c.facultyRecipients || []).map(fr => fr.facultyId)),
+    ...projects.flatMap(p => (p.facultyInvolved || []).map(fi => fi.facultyId)),
+    ...researchPapers.flatMap(rp => rp.facultyAuthors || []),
+    ...hackathons.flatMap(h => (h.facultyParticipants || []).map(fp => fp.facultyId))
+  ]);
+
+  const facultyCount = totalAchievements === 0 ? 0 : (faculty.filter(f => activeFacultyIds.has(f.id)).length || faculty.length);
+
+  // Active students who have registered completions, projects, papers, or certificates
+  const activeStudentIds = new Set([
+    ...courses.flatMap(c => (c.studentCompletions || []).map(sc => sc.studentId).concat((c.studentEnrolled || []).map(se => se.studentId))),
+    ...certificates.flatMap(c => (c.studentRecipients || []).map(sr => sr.studentId)),
+    ...projects.flatMap(p => (p.studentsInvolved || []).map(si => si.studentId)),
+    ...researchPapers.flatMap(rp => rp.studentAuthors || []),
+    ...hackathons.flatMap(h => (h.studentParticipants || []).map(sp => sp.studentId))
+  ]);
+
+  const studentCount = totalAchievements === 0 ? 0 : (students.filter(s => activeStudentIds.has(s.id)).length || students.length);
 
   return (
     <div className="page-container">
@@ -111,7 +134,7 @@ export const OverviewSection = ({ onNavigate }) => {
             <Users size={18} style={{ color: 'var(--secondary)' }} />
             <span className="metric-pill secondary" style={{ fontSize: '0.7rem' }}>Faculty Core</span>
           </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>{faculty.length}</div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>{facultyCount}</div>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Faculty Mentors</div>
         </div>
 
@@ -120,7 +143,7 @@ export const OverviewSection = ({ onNavigate }) => {
             <GraduationCap size={18} style={{ color: 'var(--primary)' }} />
             <span className="metric-pill primary" style={{ fontSize: '0.7rem' }}>Students</span>
           </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>{students.length}</div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>{studentCount}</div>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Quantum Candidates</div>
         </div>
 

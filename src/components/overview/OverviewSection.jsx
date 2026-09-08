@@ -87,7 +87,7 @@ export const OverviewSection = ({ onNavigate }) => {
             letterSpacing: '-0.03em'
           }}>
             <span style={{
-              background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
+              background: 'linear-gradient(135deg, #722F37 0%, #9E2A2B 50%, #581C26 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent'
             }}>
@@ -106,12 +106,12 @@ export const OverviewSection = ({ onNavigate }) => {
           </p>
 
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            <button className="btn btn-secondary btn-lg" onClick={() => onNavigate('faculty')} style={{ padding: '0.75rem 1.5rem', fontSize: '0.95rem' }}>
+            <button className="btn btn-primary btn-lg" onClick={() => onNavigate('faculty')} style={{ padding: '0.75rem 1.5rem', fontSize: '0.95rem' }}>
               <Users size={18} /> Faculty Contributions
               <ArrowRight size={16} />
             </button>
 
-            <button className="btn btn-primary btn-lg" onClick={() => onNavigate('student')} style={{ padding: '0.75rem 1.5rem', fontSize: '0.95rem' }}>
+            <button className="btn btn-outline btn-lg" onClick={() => onNavigate('student')} style={{ padding: '0.75rem 1.5rem', fontSize: '0.95rem', borderColor: 'var(--primary)', color: 'var(--primary)', background: '#FFFFFF' }}>
               <GraduationCap size={18} /> Student Contributions
               <ArrowRight size={16} />
             </button>
@@ -128,8 +128,8 @@ export const OverviewSection = ({ onNavigate }) => {
       }}>
         <div style={{ background: '#FFFFFF', border: '1px solid var(--border-light)', borderRadius: '14px', padding: '1.25rem', boxShadow: 'var(--shadow-xs)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <Users size={18} style={{ color: 'var(--secondary)' }} />
-            <span className="metric-pill secondary" style={{ fontSize: '0.7rem' }}>Faculty Core</span>
+            <Users size={18} style={{ color: 'var(--primary)' }} />
+            <span className="metric-pill primary" style={{ fontSize: '0.7rem' }}>Faculty Core</span>
           </div>
           <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>{facultyCount}</div>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Faculty Mentors</div>
@@ -146,8 +146,8 @@ export const OverviewSection = ({ onNavigate }) => {
 
         <div style={{ background: '#FFFFFF', border: '1px solid var(--border-light)', borderRadius: '14px', padding: '1.25rem', boxShadow: 'var(--shadow-xs)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <BookOpen size={18} style={{ color: 'var(--accent-teal)' }} />
-            <span className="metric-pill success" style={{ fontSize: '0.7rem' }}>{totalCourses} Courses</span>
+            <BookOpen size={18} style={{ color: 'var(--primary)' }} />
+            <span className="metric-pill primary" style={{ fontSize: '0.7rem' }}>{totalCourses} Courses</span>
           </div>
           <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>
             {totalFacultyCompletions + totalStudentCompletions}
@@ -166,8 +166,8 @@ export const OverviewSection = ({ onNavigate }) => {
 
         <div style={{ background: '#FFFFFF', border: '1px solid var(--border-light)', borderRadius: '14px', padding: '1.25rem', boxShadow: 'var(--shadow-xs)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <FileText size={18} style={{ color: 'var(--secondary)' }} />
-            <span className="metric-pill secondary" style={{ fontSize: '0.7rem' }}>Peer Reviewed</span>
+            <FileText size={18} style={{ color: 'var(--primary)' }} />
+            <span className="metric-pill primary" style={{ fontSize: '0.7rem' }}>Peer Reviewed</span>
           </div>
           <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>{totalPapers}</div>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Publications Indexed</div>
@@ -175,8 +175,8 @@ export const OverviewSection = ({ onNavigate }) => {
 
         <div style={{ background: '#FFFFFF', border: '1px solid var(--border-light)', borderRadius: '14px', padding: '1.25rem', boxShadow: 'var(--shadow-xs)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <Trophy size={18} style={{ color: '#D97706' }} />
-            <span className="metric-pill amber" style={{ fontSize: '0.7rem' }}>Global</span>
+            <Trophy size={18} style={{ color: 'var(--primary)' }} />
+            <span className="metric-pill primary" style={{ fontSize: '0.7rem' }}>Global</span>
           </div>
           <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>{totalHackathons}</div>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Hackathon Challenges</div>

@@ -171,9 +171,9 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
         className={`modal-content ${isFullscreen ? 'modal-fullscreen' : 'modal-xl'}`}
         onClick={(e) => e.stopPropagation()}
         style={{
-          maxWidth: isFullscreen ? '98vw' : '1020px',
+          maxWidth: isFullscreen ? '98vw' : '960px',
           width: '95vw',
-          maxHeight: isFullscreen ? '98vh' : '92vh',
+          maxHeight: isFullscreen ? '98vh' : '94vh',
           display: 'flex',
           flexDirection: 'column',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)',
@@ -184,7 +184,7 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
         }}
       >
         {/* Modal Header */}
-        <div className="modal-header" style={{ borderBottom: '1px solid var(--border-light)', padding: '0.85rem 1.5rem', background: '#FAFAFC' }}>
+        <div className="modal-header" style={{ borderBottom: '1px solid var(--border-light)', padding: '0.85rem 1.5rem', background: '#FAFAFC', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: 0 }}>
             <div style={{
               width: 36,
@@ -248,7 +248,8 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
           background: '#F8FAFC',
           borderBottom: '1px solid var(--border-light)',
           fontSize: '0.8rem',
-          color: 'var(--text-secondary)'
+          color: 'var(--text-secondary)',
+          flexShrink: 0
         }}>
           {/* Metadata chips */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
@@ -331,16 +332,15 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
 
         {/* Certificate Display Area */}
         <div className="modal-body" style={{
-          padding: '1.25rem',
+          padding: '1.5rem 1.25rem',
           background: '#0F172A',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
-          overflow: 'auto',
+          overflowY: 'auto',
+          overflowX: 'hidden',
           flex: 1,
-          minHeight: isFullscreen ? '78vh' : '520px',
-          maxHeight: isFullscreen ? '85vh' : '68vh',
+          minHeight: 0,
           position: 'relative'
         }}>
           {viewMode === 'official' ? (
@@ -348,36 +348,36 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
             <div
               style={{
                 width: '100%',
-                maxWidth: '860px',
+                maxWidth: '820px',
                 background: '#FFFFFF',
                 borderRadius: '12px',
                 border: '4px solid #1E293B',
                 boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
-                padding: '2.5rem 3rem',
+                padding: '2rem 2.25rem',
                 position: 'relative',
                 boxSizing: 'border-box',
                 color: '#0F172A',
                 textAlign: 'center',
-                overflow: 'hidden'
+                margin: 'auto'
               }}
             >
               {/* Inner Gold Inset Border */}
               <div style={{
                 position: 'absolute',
-                top: '10px',
-                left: '10px',
-                right: '10px',
-                bottom: '10px',
+                top: '8px',
+                left: '8px',
+                right: '8px',
+                bottom: '8px',
                 border: '1.5px solid #D97706',
                 borderRadius: '8px',
                 pointerEvents: 'none'
               }}></div>
 
               {/* Corner Dots */}
-              <div style={{ position: 'absolute', top: 8, left: 8, width: 8, height: 8, background: '#4F46E5', borderRadius: '50%' }}></div>
-              <div style={{ position: 'absolute', top: 8, right: 8, width: 8, height: 8, background: '#4F46E5', borderRadius: '50%' }}></div>
-              <div style={{ position: 'absolute', bottom: 8, left: 8, width: 8, height: 8, background: '#4F46E5', borderRadius: '50%' }}></div>
-              <div style={{ position: 'absolute', bottom: 8, right: 8, width: 8, height: 8, background: '#4F46E5', borderRadius: '50%' }}></div>
+              <div style={{ position: 'absolute', top: 6, left: 6, width: 8, height: 8, background: '#4F46E5', borderRadius: '50%' }}></div>
+              <div style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, background: '#4F46E5', borderRadius: '50%' }}></div>
+              <div style={{ position: 'absolute', bottom: 6, left: 6, width: 8, height: 8, background: '#4F46E5', borderRadius: '50%' }}></div>
+              <div style={{ position: 'absolute', bottom: 6, right: 6, width: 8, height: 8, background: '#4F46E5', borderRadius: '50%' }}></div>
 
               {/* Header Badge */}
               <div style={{
@@ -385,37 +385,37 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
                 background: '#F5F3FF',
                 border: '1px solid #DDD6FE',
                 borderRadius: '20px',
-                padding: '0.35rem 1.25rem',
-                fontSize: '0.8rem',
+                padding: '0.25rem 1rem',
+                fontSize: '0.75rem',
                 fontWeight: 700,
                 color: '#4F46E5',
                 letterSpacing: '0.08em',
-                marginBottom: '1rem'
+                marginBottom: '0.6rem'
               }}>
                 INSTITUTIONAL QUANTUM COMPUTING NETWORK & Q-HUB
               </div>
 
               <h2 style={{
                 fontFamily: 'Georgia, serif',
-                fontSize: '1.9rem',
+                fontSize: '1.75rem',
                 fontWeight: 800,
                 color: '#0F172A',
-                margin: '0.25rem 0',
+                margin: '0.15rem 0',
                 letterSpacing: '0.04em'
               }}>
                 CERTIFICATE OF ACHIEVEMENT
               </h2>
 
-              <div style={{ fontSize: '0.85rem', color: '#64748B', letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: '0.25rem' }}>
+              <div style={{ fontSize: '0.8rem', color: '#64748B', letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: '0.2rem' }}>
                 This official credential is proudly conferred upon
               </div>
 
               {/* Candidate Name */}
               <div style={{
-                fontSize: '1.85rem',
+                fontSize: '1.75rem',
                 fontWeight: 800,
                 color: '#4338CA',
-                margin: '1rem 0 0.25rem',
+                margin: '0.75rem 0 0.2rem',
                 fontFamily: 'Georgia, serif',
                 borderBottom: '2px solid #E0E7FF',
                 display: 'inline-block',
@@ -424,7 +424,7 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
                 {recipientName}
               </div>
 
-              <div style={{ fontSize: '0.88rem', color: '#475569', maxWidth: '640px', margin: '0.75rem auto', lineHeight: 1.5 }}>
+              <div style={{ fontSize: '0.84rem', color: '#475569', maxWidth: '640px', margin: '0.5rem auto', lineHeight: 1.45 }}>
                 as a recognized <strong>{recipientRole}</strong>, in formal recognition of successfully completing the curriculum, examination, and laboratory benchmarks for:
               </div>
 
@@ -433,14 +433,14 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
                 background: '#F8FAFC',
                 border: '1px solid #E2E8F0',
                 borderRadius: '10px',
-                padding: '0.85rem 1.5rem',
-                margin: '1rem auto',
+                padding: '0.7rem 1.25rem',
+                margin: '0.75rem auto',
                 maxWidth: '680px'
               }}>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A' }}>
+                <div style={{ fontSize: '1.18rem', fontWeight: 800, color: '#0F172A' }}>
                   {certificateTitle}
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#64748B', marginTop: '0.2rem' }}>
+                <div style={{ fontSize: '0.82rem', color: '#64748B', marginTop: '0.15rem' }}>
                   Accredited & Issued by: <strong style={{ color: '#334155' }}>{issuer}</strong>
                 </div>
               </div>
@@ -452,11 +452,11 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
                   background: '#DCFCE7',
                   border: '1px solid #86EFAC',
                   borderRadius: '20px',
-                  padding: '0.3rem 1.1rem',
-                  fontSize: '0.82rem',
+                  padding: '0.25rem 0.95rem',
+                  fontSize: '0.78rem',
                   fontWeight: 700,
                   color: '#166534',
-                  marginBottom: '1rem'
+                  marginBottom: '0.75rem'
                 }}>
                   Honors & Distinction: {grade}
                 </div>
@@ -471,16 +471,16 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
                 gap: '0.5rem',
                 background: '#F1F5F9',
                 borderRadius: '6px',
-                padding: '0.5rem 1rem',
-                fontSize: '0.78rem',
+                padding: '0.45rem 0.85rem',
+                fontSize: '0.75rem',
                 color: '#475569',
                 maxWidth: '680px',
-                margin: '0 auto 1.5rem'
+                margin: '0 auto 1rem'
               }}>
                 <div><strong>Credential ID:</strong> <span style={{ fontFamily: 'monospace', color: '#4338CA' }}>{credentialId}</span></div>
                 <div><strong>Issue Date:</strong> {issueDate}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#166534', fontWeight: 600 }}>
-                  <ShieldCheck size={14} /> Cryptographically Verified
+                  <ShieldCheck size={13} /> Cryptographically Verified
                 </div>
               </div>
 
@@ -491,22 +491,22 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
                 alignItems: 'flex-end',
                 maxWidth: '680px',
                 margin: '0 auto',
-                paddingTop: '0.5rem'
+                paddingTop: '0.35rem'
               }}>
                 {/* Dean Signature */}
-                <div style={{ textAlign: 'center', width: '180px' }}>
-                  <div style={{ borderBottom: '1px solid #94A3B8', paddingBottom: '0.25rem', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '0.95rem', color: '#0F172A' }}>
+                <div style={{ textAlign: 'center', width: '170px' }}>
+                  <div style={{ borderBottom: '1px solid #94A3B8', paddingBottom: '0.2rem', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '0.9rem', color: '#0F172A' }}>
                     Dr. A. Ramachandran
                   </div>
-                  <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: '0.2rem', fontWeight: 600 }}>
+                  <div style={{ fontSize: '0.7rem', color: '#64748B', marginTop: '0.15rem', fontWeight: 600 }}>
                     Dean of Quantum Science
                   </div>
                 </div>
 
                 {/* Verified Gold Seal */}
                 <div style={{
-                  width: 54,
-                  height: 54,
+                  width: 50,
+                  height: 50,
                   borderRadius: '50%',
                   background: 'linear-gradient(135deg, #FDE68A 0%, #D97706 100%)',
                   border: '2px solid #B45309',
@@ -517,7 +517,7 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
                   justifyContent: 'center',
                   color: '#78350F',
                   fontWeight: 900,
-                  fontSize: '0.55rem',
+                  fontSize: '0.52rem',
                   lineHeight: 1.1,
                   textAlign: 'center'
                 }}>
@@ -527,11 +527,11 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
                 </div>
 
                 {/* Academic Director Signature */}
-                <div style={{ textAlign: 'center', width: '180px' }}>
-                  <div style={{ borderBottom: '1px solid #94A3B8', paddingBottom: '0.25rem', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '0.95rem', color: '#0F172A' }}>
+                <div style={{ textAlign: 'center', width: '170px' }}>
+                  <div style={{ borderBottom: '1px solid #94A3B8', paddingBottom: '0.2rem', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '0.9rem', color: '#0F172A' }}>
                     Prof. Elena Rostova
                   </div>
-                  <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: '0.2rem', fontWeight: 600 }}>
+                  <div style={{ fontSize: '0.7rem', color: '#64748B', marginTop: '0.15rem', fontWeight: 600 }}>
                     Quantum Academic Council
                   </div>
                 </div>

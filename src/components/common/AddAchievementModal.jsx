@@ -114,8 +114,8 @@ export const AddAchievementModal = ({
     studentAuthorName: '',
     studentAuthorRoll: '',
     studentAuthorDept: 'Computer Science & Engineering',
-    // Additional Co-authors
-    additionalAuthors: []
+    // Dynamic Additional Co-authors (N Co-Authors)
+    additionalCoAuthors: []
   });
 
   // 5. Hackathon State
@@ -166,6 +166,38 @@ export const AddAchievementModal = ({
     setProjectForm(prev => ({
       ...prev,
       teammates: prev.teammates.filter((_, idx) => idx !== index)
+    }));
+  };
+
+  // Helper to add a co-author in Research Paper
+  const handleAddPaperCoAuthor = () => {
+    setPaperForm(prev => ({
+      ...prev,
+      additionalCoAuthors: [
+        ...(prev.additionalCoAuthors || []),
+        {
+          id: `tmp-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+          type: 'student', // 'student' or 'faculty'
+          name: '',
+          rollOrTitle: '',
+          department: 'Computer Science & Engineering'
+        }
+      ]
+    }));
+  };
+
+  const handleUpdatePaperCoAuthor = (index, field, value) => {
+    setPaperForm(prev => {
+      const updated = [...(prev.additionalCoAuthors || [])];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, additionalCoAuthors: updated };
+    });
+  };
+
+  const handleRemovePaperCoAuthor = (index) => {
+    setPaperForm(prev => ({
+      ...prev,
+      additionalCoAuthors: (prev.additionalCoAuthors || []).filter((_, idx) => idx !== index)
     }));
   };
 
@@ -433,14 +465,27 @@ export const AddAchievementModal = ({
       const facAuthors = [];
       if (paperForm.facultyAuthorName && paperForm.facultyAuthorName.trim()) {
         const fId = getOrMakeFaculty(paperForm.facultyAuthorName, paperForm.facultyAuthorDept, 'Faculty Author');
-        if (fId) facAuthors.push(fId);
+        if (fId && !facAuthors.includes(fId)) facAuthors.push(fId);
       }
 
       const stuAuthors = [];
       if (paperForm.studentAuthorName && paperForm.studentAuthorName.trim()) {
         const sId = getOrMakeStudent(paperForm.studentAuthorName, paperForm.studentAuthorDept, paperForm.studentAuthorRoll);
-        if (sId) stuAuthors.push(sId);
+        if (sId && !stuAuthors.includes(sId)) stuAuthors.push(sId);
       }
+
+      // Add all dynamically added co-authors (N number of co-authors)
+      (paperForm.additionalCoAuthors || []).forEach(ca => {
+        if (ca.name && ca.name.trim()) {
+          if (ca.type === 'faculty') {
+            const fId = getOrMakeFaculty(ca.name, ca.department, ca.rollOrTitle || 'Co-Author');
+            if (fId && !facAuthors.includes(fId)) facAuthors.push(fId);
+          } else {
+            const sId = getOrMakeStudent(ca.name, ca.department, ca.rollOrTitle);
+            if (sId && !stuAuthors.includes(sId)) stuAuthors.push(sId);
+          }
+        }
+      });
 
       addResearchPaper({
         title: paperForm.title,
@@ -556,6 +601,21 @@ export const AddAchievementModal = ({
       credentialId: `QHUB-CERT-${Math.floor(100000 + Math.random() * 900000)}`,
       score: 'Mastery / 95%',
       uploadedFile: null
+    });
+    setPaperForm({
+      title: '',
+      venue: 'IEEE Transactions on Quantum Engineering',
+      doi: '10.1109/TQE.2026.01234',
+      researchArea: 'Quantum Algorithms',
+      abstract: '',
+      citations: 0,
+      date: new Date().toISOString().slice(0, 10),
+      facultyAuthorName: '',
+      facultyAuthorDept: 'Physics & Quantum Computing',
+      studentAuthorName: '',
+      studentAuthorRoll: '',
+      studentAuthorDept: 'Computer Science & Engineering',
+      additionalCoAuthors: []
     });
 
     onClose();
@@ -1435,66 +1495,219 @@ export const AddAchievementModal = ({
                   padding: '1.25rem',
                   border: '1px solid var(--border-light)'
                 }}>
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <Users size={16} style={{ color: 'var(--primary)' }} />
-                    Authors & Co-Authors
-                  </h4>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <Users size={16} style={{ color: 'var(--primary)' }} />
+                      Authors & Co-Authors
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={handleAddPaperCoAuthor}
+                      className="btn-outline-primary"
+                      style={{
+                        padding: '0.35rem 0.75rem',
+                        fontSize: '0.78rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        borderColor: 'var(--primary)',
+                        color: 'var(--primary)',
+                        borderRadius: '6px'
+                      }}
+                    >
+                      <UserPlus size={14} /> + Add Co-Author
+                    </button>
+                  </div>
 
-                  <div className="form-grid-2" style={{ marginBottom: '0.75rem' }}>
-                    <div className="form-group" style={{ margin: 0 }}>
-                      <label className="form-label">Faculty Author Name</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={paperForm.facultyAuthorName}
-                        onChange={(e) => setPaperForm({ ...paperForm, facultyAuthorName: e.target.value })}
-                        placeholder="e.g. Dr. Emily Davis"
-                      />
+                  {/* Primary Faculty Author */}
+                  <div style={{ marginBottom: '1rem', paddingBottom: '0.85rem', borderBottom: '1px dashed var(--border-light)' }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                      Primary Faculty Author (Lead / Supervisor)
                     </div>
-                    <div className="form-group" style={{ margin: 0 }}>
-                      <label className="form-label">Faculty Department</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={paperForm.facultyAuthorDept}
-                        onChange={(e) => setPaperForm({ ...paperForm, facultyAuthorDept: e.target.value })}
-                        placeholder="e.g. Physics"
-                      />
+                    <div className="form-grid-2">
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label">Faculty Author Name</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={paperForm.facultyAuthorName}
+                          onChange={(e) => setPaperForm({ ...paperForm, facultyAuthorName: e.target.value })}
+                          placeholder="e.g. Dr. Emily Davis"
+                        />
+                      </div>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label">Faculty Department</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={paperForm.facultyAuthorDept}
+                          onChange={(e) => setPaperForm({ ...paperForm, facultyAuthorDept: e.target.value })}
+                          placeholder="e.g. Physics & Quantum Computing"
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="form-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
-                    <div className="form-group" style={{ margin: 0 }}>
-                      <label className="form-label">Student Co-Author Name</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={paperForm.studentAuthorName}
-                        onChange={(e) => setPaperForm({ ...paperForm, studentAuthorName: e.target.value })}
-                        placeholder="e.g. Alex Rivera"
-                      />
+                  {/* Student Co-Author */}
+                  <div style={{ marginBottom: (paperForm.additionalCoAuthors && paperForm.additionalCoAuthors.length > 0) ? '1rem' : '0', paddingBottom: (paperForm.additionalCoAuthors && paperForm.additionalCoAuthors.length > 0) ? '0.85rem' : '0', borderBottom: (paperForm.additionalCoAuthors && paperForm.additionalCoAuthors.length > 0) ? '1px dashed var(--border-light)' : 'none' }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                      Student Co-Author (Lead Investigator)
                     </div>
-                    <div className="form-group" style={{ margin: 0 }}>
-                      <label className="form-label">Student ID / Roll No</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={paperForm.studentAuthorRoll}
-                        onChange={(e) => setPaperForm({ ...paperForm, studentAuthorRoll: e.target.value })}
-                        placeholder="e.g. QU-2024-001"
-                      />
-                    </div>
-                    <div className="form-group" style={{ margin: 0 }}>
-                      <label className="form-label">Student Department</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={paperForm.studentAuthorDept}
-                        onChange={(e) => setPaperForm({ ...paperForm, studentAuthorDept: e.target.value })}
-                        placeholder="e.g. Computer Science"
-                      />
+                    <div className="form-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label">Student Co-Author Name</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={paperForm.studentAuthorName}
+                          onChange={(e) => setPaperForm({ ...paperForm, studentAuthorName: e.target.value })}
+                          placeholder="e.g. Alex Rivera"
+                        />
+                      </div>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label">Student ID / Roll No</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={paperForm.studentAuthorRoll}
+                          onChange={(e) => setPaperForm({ ...paperForm, studentAuthorRoll: e.target.value })}
+                          placeholder="e.g. QU-2024-001"
+                        />
+                      </div>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label">Student Department</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={paperForm.studentAuthorDept}
+                          onChange={(e) => setPaperForm({ ...paperForm, studentAuthorDept: e.target.value })}
+                          placeholder="e.g. Computer Science & Engineering"
+                        />
+                      </div>
                     </div>
                   </div>
+
+                  {/* Dynamic Additional Co-Authors List (N Co-Authors) */}
+                  {paperForm.additionalCoAuthors && paperForm.additionalCoAuthors.length > 0 && (
+                    <div style={{ marginTop: '0.75rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+                        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                          Additional Co-Authors ({paperForm.additionalCoAuthors.length})
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                        {paperForm.additionalCoAuthors.map((author, idx) => (
+                          <div
+                            key={author.id || idx}
+                            style={{
+                              background: '#FFFFFF',
+                              padding: '0.75rem',
+                              borderRadius: '8px',
+                              border: '1px solid var(--border-light)',
+                              display: 'grid',
+                              gridTemplateColumns: '130px 1.2fr 1fr 1.2fr 34px',
+                              gap: '0.5rem',
+                              alignItems: 'flex-end'
+                            }}
+                          >
+                            <div>
+                              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Type</label>
+                              <select
+                                className="form-input"
+                                value={author.type || 'student'}
+                                onChange={(e) => handleUpdatePaperCoAuthor(idx, 'type', e.target.value)}
+                                style={{ padding: '0.4rem 0.5rem', fontSize: '0.8rem', height: '36px' }}
+                              >
+                                <option value="student">Student Co-Author</option>
+                                <option value="faculty">Faculty Co-Author</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Co-Author Name</label>
+                              <input
+                                type="text"
+                                className="form-input"
+                                value={author.name}
+                                onChange={(e) => handleUpdatePaperCoAuthor(idx, 'name', e.target.value)}
+                                placeholder={author.type === 'faculty' ? "e.g. Dr. Jane Doe" : "e.g. Maya Lin"}
+                                style={{ padding: '0.4rem 0.6rem', fontSize: '0.82rem', height: '36px' }}
+                              />
+                            </div>
+
+                            <div>
+                              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                                {author.type === 'faculty' ? 'Designation / Title' : 'Student ID / Roll No'}
+                              </label>
+                              <input
+                                type="text"
+                                className="form-input"
+                                value={author.rollOrTitle}
+                                onChange={(e) => handleUpdatePaperCoAuthor(idx, 'rollOrTitle', e.target.value)}
+                                placeholder={author.type === 'faculty' ? "e.g. Associate Professor" : "e.g. QU-2024-088"}
+                                style={{ padding: '0.4rem 0.6rem', fontSize: '0.82rem', height: '36px' }}
+                              />
+                            </div>
+
+                            <div>
+                              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Department</label>
+                              <input
+                                type="text"
+                                className="form-input"
+                                value={author.department}
+                                onChange={(e) => handleUpdatePaperCoAuthor(idx, 'department', e.target.value)}
+                                placeholder="e.g. Physics & Quantum Computing"
+                                style={{ padding: '0.4rem 0.6rem', fontSize: '0.82rem', height: '36px' }}
+                              />
+                            </div>
+
+                            <button
+                              type="button"
+                              className="btn-icon-danger"
+                              title="Remove Co-Author"
+                              onClick={() => handleRemovePaperCoAuthor(idx)}
+                              style={{ height: '36px', width: '34px', marginBottom: '0' }}
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {(!paperForm.additionalCoAuthors || paperForm.additionalCoAuthors.length === 0) && (
+                    <div style={{
+                      marginTop: '0.6rem',
+                      padding: '0.6rem 0.8rem',
+                      borderRadius: '8px',
+                      background: 'rgba(114, 47, 55, 0.04)',
+                      border: '1px dashed rgba(114, 47, 55, 0.2)',
+                      fontSize: '0.78rem',
+                      color: 'var(--text-muted)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}>
+                      <span>Need to add more co-authors? Click <strong>+ Add Co-Author</strong> above to add unlimited faculty or student co-authors.</span>
+                      <button
+                        type="button"
+                        onClick={handleAddPaperCoAuthor}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--primary)',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          fontSize: '0.78rem',
+                          textDecoration: 'underline'
+                        }}
+                      >
+                        + Add Now
+                      </button>
+                    </div>
+                  )}
                 </div>
               </>
             )}

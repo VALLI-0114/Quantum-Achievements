@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
-import { Layers, ArrowLeft, Search, User, Code2, CheckCircle2, FileDown, Download, Trash2 } from 'lucide-react';
+import { Layers, ArrowLeft, Search, User, Code2, CheckCircle2, FileDown, Download, Trash2, Edit3, UserPlus, Plus } from 'lucide-react';
 import { useQuantumDB } from '../../data/db';
 import { downloadCategoryReportPDF, downloadProjectReportPDF } from '../../utils/pdfGenerator';
+import { EditProjectModal } from '../common/EditProjectModal';
+import { AddTeammateModal } from '../common/AddTeammateModal';
 
 export const StudentProjects = ({ onOpenProfile, onAddProject }) => {
   const { projects, students, faculty, deleteRecord, confirmDelete, removeProjectParticipant } = useQuantumDB();
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingProject, setEditingProject] = useState(null);
+  const [isAddTeammateOpen, setIsAddTeammateOpen] = useState(false);
+  const [addTeammateRoleType, setAddTeammateRoleType] = useState('student');
 
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
@@ -44,17 +49,19 @@ export const StudentProjects = ({ onOpenProfile, onAddProject }) => {
   if (selectedProject) {
     const studentList = (selectedProject.studentsInvolved || []).map(si => {
       const s = students.find(stu => stu.id === si.studentId) || {
-        name: "Student Lead",
-        department: "Information Technology",
-        studentId: "QU-2023"
+        id: si.studentId,
+        name: si.studentName || "Student Developer",
+        department: si.department || "Information Technology",
+        studentId: si.roll || "QU-2024"
       };
       return { ...si, student: s, studentName: s.name, department: s.department };
     });
 
     const facultyList = (selectedProject.facultyInvolved || []).map(fi => {
       const f = faculty.find(fac => fac.id === fi.facultyId) || {
-        name: "Dr. Faculty Mentor",
-        department: "Physics"
+        id: fi.facultyId,
+        name: fi.facultyName || "Dr. Faculty Mentor",
+        department: fi.department || "Physics"
       };
       return { ...fi, faculty: f, facultyName: f.name, department: f.department };
     });
@@ -111,6 +118,13 @@ export const StudentProjects = ({ onOpenProfile, onAddProject }) => {
             </div>
 
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button
+                className="btn btn-primary"
+                onClick={() => setEditingProject(selectedProject)}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+              >
+                <Edit3 size={15} /> Edit Project & Team
+              </button>
               <button className="btn btn-outline" onClick={handleDownloadSingleProjectPDF}>
                 <Download size={16} /> Download Project PDF
               </button>
@@ -146,79 +160,153 @@ export const StudentProjects = ({ onOpenProfile, onAddProject }) => {
 
         {/* Student Team Section */}
         <div style={{ marginBottom: '1.75rem' }}>
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1rem' }}>
-            Student Creators & Developers ({studentList.length})
-          </h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+              Student Creators & Developers ({studentList.length})
+            </h3>
+            <button
+              className="btn btn-outline btn-sm"
+              onClick={() => {
+                setAddTeammateRoleType('student');
+                setIsAddTeammateOpen(true);
+              }}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+            >
+              <UserPlus size={14} /> + Add Teammate
+            </button>
+          </div>
+
           <div className="cards-grid-2">
-            {studentList.map((item, idx) => (
-              <div key={idx} className="item-card" style={{ padding: '1.25rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: '50%',
-                      background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
-                      color: '#FFFFFF',
-                      fontSize: '0.9rem',
-                      fontWeight: 700,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      {item.student.avatar || item.student.name.slice(0, 2).toUpperCase()}
-                    </div>
-                    <div>
-                      <strong style={{ fontSize: '0.95rem' }}>{item.student.name}</strong>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        {item.student.studentId} • {item.student.department}
+            {studentList.length === 0 ? (
+              <div style={{
+                gridColumn: '1 / -1',
+                padding: '2rem 1.5rem',
+                textAlign: 'center',
+                background: 'var(--bg-surface-subtle)',
+                borderRadius: '12px',
+                border: '1px dashed var(--border-light)'
+              }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.75rem' }}>
+                  No student developers or teammates attached to this project yet.
+                </p>
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => {
+                    setAddTeammateRoleType('student');
+                    setIsAddTeammateOpen(true);
+                  }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                >
+                  <UserPlus size={14} /> + Add First Student Teammate
+                </button>
+              </div>
+            ) : (
+              studentList.map((item, idx) => (
+                <div key={idx} className="item-card" style={{ padding: '1.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
+                        color: '#FFFFFF',
+                        fontSize: '0.9rem',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        {item.student.avatar || item.student.name.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <strong style={{ fontSize: '0.95rem' }}>{item.student.name}</strong>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          {item.student.studentId} • {item.student.department}
+                        </div>
                       </div>
                     </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <button className="btn btn-outline btn-sm" onClick={() => onOpenProfile(item.student.id, 'student')}>
+                        <User size={14} /> Profile
+                      </button>
+                      <button
+                        className="btn-icon-danger"
+                        title="Remove Student from Project"
+                        onClick={() => {
+                          confirmDelete({
+                            title: `Remove ${item.student.name}`,
+                            message: `Remove ${item.student.name} from this project?`,
+                            onConfirm: () => removeProjectParticipant(selectedProject.id, 'student', item.studentId)
+                          });
+                        }}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <button className="btn btn-outline btn-sm" onClick={() => onOpenProfile(item.student.id, 'student')}>
-                      <User size={14} /> Profile
-                    </button>
-                    <button
-                      className="btn-icon-danger"
-                      title="Remove Student from Project"
-                      onClick={() => {
-                        confirmDelete({
-                          title: `Remove ${item.student.name}`,
-                          message: `Remove ${item.student.name} from this project?`,
-                          onConfirm: () => removeProjectParticipant(selectedProject.id, 'student', item.studentId)
-                        });
-                      }}
-                    >
-                      <Trash2 size={15} />
-                    </button>
+                  <div style={{
+                    marginTop: '0.75rem',
+                    paddingTop: '0.75rem',
+                    borderTop: '1px solid var(--border-light)',
+                    fontSize: '0.82rem',
+                    color: 'var(--primary)',
+                    fontWeight: 600
+                  }}>
+                    Team Role: <strong>{item.role || 'Quantum Developer'}</strong>
                   </div>
                 </div>
-
-                <div style={{
-                  marginTop: '0.75rem',
-                  paddingTop: '0.75rem',
-                  borderTop: '1px solid var(--border-light)',
-                  fontSize: '0.82rem',
-                  color: 'var(--primary)',
-                  fontWeight: 600
-                }}>
-                  Team Role: <strong>{item.role}</strong>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
-        {/* Faculty Mentors */}
-        {facultyList.length > 0 && (
-          <div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1rem' }}>
+        {/* Faculty Mentors Section */}
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', marginTop: '1.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
               Faculty Research Mentors & Advisors ({facultyList.length})
             </h3>
-            <div className="cards-grid-2">
-              {facultyList.map((item, idx) => (
+            <button
+              className="btn btn-outline btn-sm"
+              onClick={() => {
+                setAddTeammateRoleType('faculty');
+                setIsAddTeammateOpen(true);
+              }}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+            >
+              <UserPlus size={14} /> + Add Faculty Advisor
+            </button>
+          </div>
+
+          <div className="cards-grid-2">
+            {facultyList.length === 0 ? (
+              <div style={{
+                gridColumn: '1 / -1',
+                padding: '1.5rem',
+                textAlign: 'center',
+                background: 'var(--bg-surface-subtle)',
+                borderRadius: '12px',
+                border: '1px dashed var(--border-light)'
+              }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '0.5rem' }}>
+                  No faculty research mentors assigned to this project.
+                </p>
+                <button
+                  className="btn btn-outline btn-sm"
+                  onClick={() => {
+                    setAddTeammateRoleType('faculty');
+                    setIsAddTeammateOpen(true);
+                  }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                >
+                  <UserPlus size={14} /> + Add Faculty Mentor
+                </button>
+              </div>
+            ) : (
+              facultyList.map((item, idx) => (
                 <div key={idx} className="item-card" style={{ padding: '1.25rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
@@ -255,10 +343,24 @@ export const StudentProjects = ({ onOpenProfile, onAddProject }) => {
                     Mentorship: <strong>{item.role || 'Faculty Advisor'}</strong>
                   </div>
                 </div>
-              ))}
-            </div>
+              ))
+            )}
           </div>
-        )}
+        </div>
+
+        {/* Modals for Drilldown View */}
+        <EditProjectModal
+          isOpen={!!editingProject}
+          onClose={() => setEditingProject(null)}
+          project={editingProject}
+        />
+        <AddTeammateModal
+          isOpen={isAddTeammateOpen}
+          onClose={() => setIsAddTeammateOpen(false)}
+          projectId={selectedProject.id}
+          projectTitle={selectedProject.title}
+          initialRoleType={addTeammateRoleType}
+        />
       </div>
     );
   }
@@ -284,7 +386,9 @@ export const StudentProjects = ({ onOpenProfile, onAddProject }) => {
             ➕ Add Project
           </button>
         </div>
-        <div className="cards-grid-3">
+      </div>
+
+      <div className="cards-grid-3">
         {filteredProjects.length === 0 ? (
           <div style={{
             gridColumn: '1 / -1',
@@ -315,6 +419,25 @@ export const StudentProjects = ({ onOpenProfile, onAddProject }) => {
                   <span className="metric-pill primary card-badge-pill" title={project.domain}>{project.domain}</span>
                   <div className="card-header-meta">
                     <span className="metric-pill success" style={{ fontSize: '0.74rem' }}>{project.status}</span>
+                    <button
+                      className="btn-icon"
+                      title="Edit Project & Team"
+                      style={{
+                        flexShrink: 0,
+                        padding: '4px',
+                        background: 'var(--primary-light)',
+                        color: 'var(--primary)',
+                        border: '1px solid var(--border-light)',
+                        borderRadius: '6px'
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        setEditingProject(project);
+                      }}
+                    >
+                      <Edit3 size={13} />
+                    </button>
                     <button
                       className="btn-icon-danger"
                       title="Delete Project"
@@ -370,7 +493,13 @@ export const StudentProjects = ({ onOpenProfile, onAddProject }) => {
           })
         )}
       </div>
-      </div>
+
+      {/* Modals for List View */}
+      <EditProjectModal
+        isOpen={!!editingProject}
+        onClose={() => setEditingProject(null)}
+        project={editingProject}
+      />
     </div>
   );
 };

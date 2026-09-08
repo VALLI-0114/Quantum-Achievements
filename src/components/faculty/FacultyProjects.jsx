@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
-import { Layers, ArrowLeft, Search, User, ExternalLink, Code2, CheckCircle2, FileDown, Download, Trash2, Plus } from 'lucide-react';
+import { Layers, ArrowLeft, Search, User, ExternalLink, Code2, CheckCircle2, FileDown, Download, Trash2, Edit3, UserPlus, Plus } from 'lucide-react';
 import { useQuantumDB } from '../../data/db';
 import { downloadCategoryReportPDF, downloadProjectReportPDF } from '../../utils/pdfGenerator';
+import { EditProjectModal } from '../common/EditProjectModal';
+import { AddTeammateModal } from '../common/AddTeammateModal';
 
 export const FacultyProjects = ({ onOpenProfile, onAddProject }) => {
   const { projects, faculty, students, deleteRecord, confirmDelete, removeProjectParticipant } = useQuantumDB();
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingProject, setEditingProject] = useState(null);
+  const [isAddTeammateOpen, setIsAddTeammateOpen] = useState(false);
+  const [addTeammateRoleType, setAddTeammateRoleType] = useState('faculty');
 
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
@@ -44,8 +49,9 @@ export const FacultyProjects = ({ onOpenProfile, onAddProject }) => {
   if (selectedProject) {
     const facultyList = (selectedProject.facultyInvolved || []).map(fi => {
       const f = faculty.find(fac => fac.id === fi.facultyId) || {
-        name: "Dr. Faculty Researcher",
-        department: "Quantum Science",
+        id: fi.facultyId,
+        name: fi.facultyName || "Dr. Faculty Researcher",
+        department: fi.department || "Quantum Science",
         title: "Principal Investigator"
       };
       return { ...fi, faculty: f, facultyName: f.name, department: f.department };
@@ -53,9 +59,10 @@ export const FacultyProjects = ({ onOpenProfile, onAddProject }) => {
 
     const studentList = (selectedProject.studentsInvolved || []).map(si => {
       const s = students.find(stu => stu.id === si.studentId) || {
-        name: "Student Researcher",
-        department: "Information Technology",
-        studentId: "QU-2025"
+        id: si.studentId,
+        name: si.studentName || "Student Researcher",
+        department: si.department || "Information Technology",
+        studentId: si.roll || "QU-2025"
       };
       return { ...si, student: s, studentName: s.name, department: s.department };
     });
@@ -113,6 +120,13 @@ export const FacultyProjects = ({ onOpenProfile, onAddProject }) => {
             </div>
 
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setEditingProject(selectedProject)}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+              >
+                <Edit3 size={15} /> Edit Project & Team
+              </button>
               <button className="btn btn-outline" onClick={handleDownloadSingleProjectPDF}>
                 <Download size={16} /> Download Project PDF
               </button>
@@ -148,80 +162,154 @@ export const FacultyProjects = ({ onOpenProfile, onAddProject }) => {
 
         {/* Faculty Involved Section */}
         <div style={{ marginBottom: '1.75rem' }}>
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1rem' }}>
-            Faculty Members & Research Leads ({facultyList.length})
-          </h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+              Faculty Members & Research Leads ({facultyList.length})
+            </h3>
+            <button
+              className="btn btn-outline btn-sm"
+              onClick={() => {
+                setAddTeammateRoleType('faculty');
+                setIsAddTeammateOpen(true);
+              }}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+            >
+              <UserPlus size={14} /> + Add Faculty Lead
+            </button>
+          </div>
+
           <div className="cards-grid-2">
-            {facultyList.map((item, idx) => (
-              <div key={idx} className="item-card" style={{ padding: '1.25rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: '50%',
-                      background: 'linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%)',
-                      color: '#FFFFFF',
-                      fontSize: '1rem',
-                      fontWeight: 700,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      {item.faculty.avatar || item.faculty.name.slice(0, 2).toUpperCase()}
-                    </div>
-                    <div>
-                      <strong style={{ fontSize: '0.95rem', color: 'var(--text-primary)' }}>{item.faculty.name}</strong>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{item.faculty.department}</div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <button
-                      className="btn btn-outline btn-sm"
-                      onClick={() => onOpenProfile(item.faculty.id, 'faculty')}
-                    >
-                      <User size={14} /> Profile
-                    </button>
-                    <button
-                      className="btn-icon-danger"
-                      title="Remove faculty from project"
-                      onClick={() => {
-                        confirmDelete({
-                          title: `Remove ${item.faculty.name}`,
-                          message: `Remove ${item.faculty.name} from this project?`,
-                          onConfirm: () => removeProjectParticipant(selectedProject.id, 'faculty', item.faculty.id)
-                        });
-                      }}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-
-                <div style={{
-                  marginTop: '0.75rem',
-                  paddingTop: '0.75rem',
-                  borderTop: '1px solid var(--border-light)',
-                  fontSize: '0.82rem',
-                  color: 'var(--secondary)',
-                  fontWeight: 600
-                }}>
-                  Project Role: <strong>{item.role || 'Faculty Advisor'}</strong>
-                </div>
+            {facultyList.length === 0 ? (
+              <div style={{
+                gridColumn: '1 / -1',
+                padding: '2rem 1.5rem',
+                textAlign: 'center',
+                background: 'var(--bg-surface-subtle)',
+                borderRadius: '12px',
+                border: '1px dashed var(--border-light)'
+              }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.75rem' }}>
+                  No faculty leads assigned to this project yet.
+                </p>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => {
+                    setAddTeammateRoleType('faculty');
+                    setIsAddTeammateOpen(true);
+                  }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                >
+                  <UserPlus size={14} /> + Add First Faculty Lead
+                </button>
               </div>
-            ))}
+            ) : (
+              facultyList.map((item, idx) => (
+                <div key={idx} className="item-card" style={{ padding: '1.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%)',
+                        color: '#FFFFFF',
+                        fontSize: '1rem',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        {item.faculty.avatar || item.faculty.name.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <strong style={{ fontSize: '0.95rem', color: 'var(--text-primary)' }}>{item.faculty.name}</strong>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{item.faculty.department}</div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <button
+                        className="btn btn-outline btn-sm"
+                        onClick={() => onOpenProfile(item.faculty.id, 'faculty')}
+                      >
+                        <User size={14} /> Profile
+                      </button>
+                      <button
+                        className="btn-icon-danger"
+                        title="Remove faculty from project"
+                        onClick={() => {
+                          confirmDelete({
+                            title: `Remove ${item.faculty.name}`,
+                            message: `Remove ${item.faculty.name} from this project?`,
+                            onConfirm: () => removeProjectParticipant(selectedProject.id, 'faculty', item.facultyId || item.faculty.id)
+                          });
+                        }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{
+                    marginTop: '0.75rem',
+                    paddingTop: '0.75rem',
+                    borderTop: '1px solid var(--border-light)',
+                    fontSize: '0.82rem',
+                    color: 'var(--secondary)',
+                    fontWeight: 600
+                  }}>
+                    Project Role: <strong>{item.role || 'Faculty Advisor'}</strong>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
         {/* Student Collaborators */}
-        {studentList.length > 0 && (
-          <div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1rem' }}>
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', marginTop: '1.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
               Student Research Associates & Engineers ({studentList.length})
             </h3>
-            <div className="cards-grid-2">
-              {studentList.map((item, idx) => (
+            <button
+              className="btn btn-outline btn-sm"
+              onClick={() => {
+                setAddTeammateRoleType('student');
+                setIsAddTeammateOpen(true);
+              }}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+            >
+              <UserPlus size={14} /> + Add Student Teammate
+            </button>
+          </div>
+
+          <div className="cards-grid-2">
+            {studentList.length === 0 ? (
+              <div style={{
+                gridColumn: '1 / -1',
+                padding: '1.5rem',
+                textAlign: 'center',
+                background: 'var(--bg-surface-subtle)',
+                borderRadius: '12px',
+                border: '1px dashed var(--border-light)'
+              }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '0.5rem' }}>
+                  No student research associates assigned to this project.
+                </p>
+                <button
+                  className="btn btn-outline btn-sm"
+                  onClick={() => {
+                    setAddTeammateRoleType('student');
+                    setIsAddTeammateOpen(true);
+                  }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                >
+                  <UserPlus size={14} /> + Add Student Associate
+                </button>
+              </div>
+            ) : (
+              studentList.map((item, idx) => (
                 <div key={idx} className="item-card" style={{ padding: '1.25rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
@@ -244,7 +332,7 @@ export const FacultyProjects = ({ onOpenProfile, onAddProject }) => {
                           confirmDelete({
                             title: `Remove ${item.student.name}`,
                             message: `Remove ${item.student.name} from this project?`,
-                            onConfirm: () => removeProjectParticipant(selectedProject.id, 'students', item.student.id)
+                            onConfirm: () => removeProjectParticipant(selectedProject.id, 'students', item.studentId || item.student.id)
                           });
                         }}
                       >
@@ -260,13 +348,27 @@ export const FacultyProjects = ({ onOpenProfile, onAddProject }) => {
                     color: 'var(--primary)',
                     fontWeight: 600
                   }}>
-                    Assigned Task: <strong>{item.role}</strong>
+                    Assigned Task: <strong>{item.role || 'Quantum Developer'}</strong>
                   </div>
                 </div>
-              ))}
-            </div>
+              ))
+            )}
           </div>
-        )}
+        </div>
+
+        {/* Modals for Drilldown View */}
+        <EditProjectModal
+          isOpen={!!editingProject}
+          onClose={() => setEditingProject(null)}
+          project={editingProject}
+        />
+        <AddTeammateModal
+          isOpen={isAddTeammateOpen}
+          onClose={() => setIsAddTeammateOpen(false)}
+          projectId={selectedProject.id}
+          projectTitle={selectedProject.title}
+          initialRoleType={addTeammateRoleType}
+        />
       </div>
     );
   }
@@ -326,6 +428,25 @@ export const FacultyProjects = ({ onOpenProfile, onAddProject }) => {
                   <div className="card-header-meta">
                     <span className="metric-pill success" style={{ fontSize: '0.74rem' }}>{project.status}</span>
                     <button
+                      className="btn-icon"
+                      title="Edit Project & Team"
+                      style={{
+                        flexShrink: 0,
+                        padding: '4px',
+                        background: 'var(--secondary-light)',
+                        color: 'var(--secondary)',
+                        border: '1px solid var(--border-light)',
+                        borderRadius: '6px'
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        setEditingProject(project);
+                      }}
+                    >
+                      <Edit3 size={13} />
+                    </button>
+                    <button
                       className="btn-icon-danger"
                       title="Delete Project"
                       style={{ flexShrink: 0 }}
@@ -380,6 +501,13 @@ export const FacultyProjects = ({ onOpenProfile, onAddProject }) => {
           })
         )}
       </div>
+
+      {/* Modals for List View */}
+      <EditProjectModal
+        isOpen={!!editingProject}
+        onClose={() => setEditingProject(null)}
+        project={editingProject}
+      />
     </div>
   );
 };

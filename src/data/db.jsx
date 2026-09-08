@@ -1373,6 +1373,86 @@ export const QuantumDBProvider = ({ children }) => {
     });
   };
 
+  const updateProject = (projectId, updatedFields, newFacultyList = [], newStudentsList = []) => {
+    const matchId = String(projectId);
+    updateDataAndSync(prev => {
+      const existingFacIds = new Set(prev.faculty.map(f => f.id));
+      const existingStuIds = new Set(prev.students.map(s => s.id));
+      const filteredNewFac = (newFacultyList || []).filter(f => f && f.id && !existingFacIds.has(f.id));
+      const filteredNewStu = (newStudentsList || []).filter(s => s && s.id && !existingStuIds.has(s.id));
+
+      const updatedProjects = prev.projects.map(p => {
+        if (String(p.id) === matchId) {
+          return {
+            ...p,
+            ...updatedFields,
+            id: p.id
+          };
+        }
+        return p;
+      });
+
+      return {
+        ...prev,
+        faculty: [...filteredNewFac, ...prev.faculty],
+        students: [...filteredNewStu, ...prev.students],
+        projects: updatedProjects
+      };
+    });
+  };
+
+  const addProjectParticipant = (projectId, roleType, personId, recordData = {}, personData = null) => {
+    const matchProj = String(projectId);
+    const matchPerson = String(personId);
+
+    updateDataAndSync(prev => {
+      let nextFaculty = [...prev.faculty];
+      let nextStudents = [...prev.students];
+
+      if (personData) {
+        if (roleType === 'faculty' && !nextFaculty.some(f => f.id === matchPerson)) {
+          nextFaculty = [{ ...personData, id: matchPerson }, ...nextFaculty];
+        } else if (roleType === 'student' && !nextStudents.some(s => s.id === matchPerson)) {
+          nextStudents = [{ ...personData, id: matchPerson }, ...nextStudents];
+        }
+      }
+
+      const updatedProjects = prev.projects.map(p => {
+        if (String(p.id) !== matchProj) return p;
+        if (roleType === 'faculty') {
+          const currentFac = p.facultyInvolved || [];
+          const existingIdx = currentFac.findIndex(fi => String(fi.facultyId || fi) === matchPerson);
+          let newFac;
+          if (existingIdx >= 0) {
+            newFac = [...currentFac];
+            newFac[existingIdx] = { ...newFac[existingIdx], ...recordData, facultyId: matchPerson };
+          } else {
+            newFac = [...currentFac, { facultyId: matchPerson, role: recordData.role || 'Faculty Advisor', ...recordData }];
+          }
+          return { ...p, facultyInvolved: newFac };
+        } else {
+          const currentStu = p.studentsInvolved || [];
+          const existingIdx = currentStu.findIndex(si => String(si.studentId || si) === matchPerson);
+          let newStu;
+          if (existingIdx >= 0) {
+            newStu = [...currentStu];
+            newStu[existingIdx] = { ...newStu[existingIdx], ...recordData, studentId: matchPerson };
+          } else {
+            newStu = [...currentStu, { studentId: matchPerson, role: recordData.role || 'Project Developer', ...recordData }];
+          }
+          return { ...p, studentsInvolved: newStu };
+        }
+      });
+
+      return {
+        ...prev,
+        faculty: nextFaculty,
+        students: nextStudents,
+        projects: updatedProjects
+      };
+    });
+  };
+
   // 4. Research Paper Management
   const addResearchPaper = (newPaper, newFacultyList = [], newStudentsList = []) => {
     updateDataAndSync(prev => {
@@ -1485,6 +1565,86 @@ export const QuantumDBProvider = ({ children }) => {
           facultyParticipants: newHackathon.facultyParticipants || [],
           studentParticipants: newHackathon.studentParticipants || []
         }, ...prev.hackathons]
+      };
+    });
+  };
+
+  const updateHackathon = (hackathonId, updatedFields, newFacultyList = [], newStudentsList = []) => {
+    const matchId = String(hackathonId);
+    updateDataAndSync(prev => {
+      const existingFacIds = new Set(prev.faculty.map(f => f.id));
+      const existingStuIds = new Set(prev.students.map(s => s.id));
+      const filteredNewFac = (newFacultyList || []).filter(f => f && f.id && !existingFacIds.has(f.id));
+      const filteredNewStu = (newStudentsList || []).filter(s => s && s.id && !existingStuIds.has(s.id));
+
+      const updatedHackathons = prev.hackathons.map(h => {
+        if (String(h.id) === matchId) {
+          return {
+            ...h,
+            ...updatedFields,
+            id: h.id
+          };
+        }
+        return h;
+      });
+
+      return {
+        ...prev,
+        faculty: [...filteredNewFac, ...prev.faculty],
+        students: [...filteredNewStu, ...prev.students],
+        hackathons: updatedHackathons
+      };
+    });
+  };
+
+  const addHackathonParticipant = (hackathonId, roleType, personId, recordData = {}, personData = null) => {
+    const matchHck = String(hackathonId);
+    const matchPerson = String(personId);
+
+    updateDataAndSync(prev => {
+      let nextFaculty = [...prev.faculty];
+      let nextStudents = [...prev.students];
+
+      if (personData) {
+        if (roleType === 'faculty' && !nextFaculty.some(f => f.id === matchPerson)) {
+          nextFaculty = [{ ...personData, id: matchPerson }, ...nextFaculty];
+        } else if (roleType === 'student' && !nextStudents.some(s => s.id === matchPerson)) {
+          nextStudents = [{ ...personData, id: matchPerson }, ...nextStudents];
+        }
+      }
+
+      const updatedHackathons = prev.hackathons.map(h => {
+        if (String(h.id) !== matchHck) return h;
+        if (roleType === 'faculty') {
+          const currentFac = h.facultyParticipants || [];
+          const existingIdx = currentFac.findIndex(fp => String(fp.facultyId || fp) === matchPerson);
+          let newFac;
+          if (existingIdx >= 0) {
+            newFac = [...currentFac];
+            newFac[existingIdx] = { ...newFac[existingIdx], ...recordData, facultyId: matchPerson };
+          } else {
+            newFac = [...currentFac, { facultyId: matchPerson, role: recordData.role || 'Mentor', ...recordData }];
+          }
+          return { ...h, facultyParticipants: newFac };
+        } else {
+          const currentStu = h.studentParticipants || [];
+          const existingIdx = currentStu.findIndex(sp => String(sp.studentId || sp) === matchPerson);
+          let newStu;
+          if (existingIdx >= 0) {
+            newStu = [...currentStu];
+            newStu[existingIdx] = { ...newStu[existingIdx], ...recordData, studentId: matchPerson };
+          } else {
+            newStu = [...currentStu, { studentId: matchPerson, ...recordData }];
+          }
+          return { ...h, studentParticipants: newStu };
+        }
+      });
+
+      return {
+        ...prev,
+        faculty: nextFaculty,
+        students: nextStudents,
+        hackathons: updatedHackathons
       };
     });
   };
@@ -1756,10 +1916,14 @@ export const QuantumDBProvider = ({ children }) => {
       addCertificate,
       addCertificateRecipient,
       addProject,
+      updateProject,
+      addProjectParticipant,
       addResearchPaper,
       updateResearchPaper,
       addResearchPaperAuthor,
       addHackathon,
+      updateHackathon,
+      addHackathonParticipant,
       addFaculty,
       addStudent,
       deleteRecord,

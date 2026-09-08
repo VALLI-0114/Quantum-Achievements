@@ -913,6 +913,64 @@ body {
   animation: spin 1.5s linear infinite;
 }
 
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Supabase Cloud Status Pill */
+.cloud-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--bg-surface-subtle);
+  color: var(--text-secondary);
+}
+
+.cloud-status-pill.success {
+  background: #ECFDF5;
+  color: #065F46;
+  border-color: #A7F3D0;
+}
+.cloud-status-pill.success:hover {
+  background: #D1FAE5;
+  border-color: #6EE7B7;
+}
+
+.cloud-status-pill.warning {
+  background: #FEF3C7;
+  color: #92400E;
+  border-color: #FDE68A;
+  cursor: default;
+}
+
+.cloud-status-pill.danger {
+  background: #FEF2F2;
+  color: #991B1B;
+  border-color: #FECACA;
+}
+.cloud-status-pill.danger:hover {
+  background: #FEE2E2;
+  border-color: #FCA5A5;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.status-dot.green {
+  background: #10B981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   :root {

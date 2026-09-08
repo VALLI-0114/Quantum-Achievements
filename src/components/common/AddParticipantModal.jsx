@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, Plus, UserPlus, UploadCloud, FileCheck, User } from 'lucide-react';
+import { X, Plus, UserPlus, UploadCloud, FileCheck, User, Loader2 } from 'lucide-react';
 import { useQuantumDB } from '../../data/db';
+import { compressImageFile } from '../../utils/imageCompressor';
 
 export const AddParticipantModal = ({
   isOpen,
@@ -41,30 +42,34 @@ export const AddParticipantModal = ({
     uploadedFile: null
   });
 
+  const [isCompressingFile, setIsCompressingFile] = useState(false);
+
   if (!isOpen) return null;
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 8 * 1024 * 1024) {
-      alert('File size exceeds 8MB limit.');
+    if (file.size > 15 * 1024 * 1024) {
+      alert('File size exceeds 15MB limit.');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setCompletionData(prev => ({
-        ...prev,
-        uploadedFile: {
-          name: file.name,
-          size: (file.size / 1024).toFixed(1) + ' KB',
-          type: file.type,
-          dataUrl: event.target.result
-        }
-      }));
-    };
-    reader.readAsDataURL(file);
+    try {
+      setIsCompressingFile(true);
+      const fileData = await compressImageFile(file, 1000, 0.75);
+      if (fileData) {
+        setCompletionData(prev => ({
+          ...prev,
+          uploadedFile: fileData
+        }));
+      }
+    } catch (err) {
+      console.error('File compression error:', err);
+      alert('Failed to process image file.');
+    } finally {
+      setIsCompressingFile(false);
+    }
   };
 
   const handleSubmit = (e) => {

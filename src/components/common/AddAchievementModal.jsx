@@ -13,9 +13,11 @@ import {
   Users,
   Trash2,
   Sparkles,
-  UserPlus
+  UserPlus,
+  Loader2
 } from 'lucide-react';
 import { useQuantumDB } from '../../data/db';
+import { compressImageFile } from '../../utils/imageCompressor';
 
 export const AddAchievementModal = ({
   isOpen,
@@ -199,35 +201,38 @@ export const AddAchievementModal = ({
     }));
   };
 
-  // File upload handler
-  const handleFileUpload = (formType, file) => {
+  const [isCompressingFile, setIsCompressingFile] = useState(false);
+
+  // File upload handler with automatic image compression
+  const handleFileUpload = async (formType, file) => {
     if (!file) return;
 
-    if (file.size > 8 * 1024 * 1024) {
-      alert('File size exceeds 8MB limit. Please upload a file smaller than 8MB.');
+    if (file.size > 15 * 1024 * 1024) {
+      alert('File size exceeds 15MB limit. Please upload a smaller file.');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const fileData = {
-        name: file.name,
-        size: (file.size / 1024).toFixed(1) + ' KB',
-        type: file.type,
-        dataUrl: event.target.result
-      };
+    try {
+      setIsCompressingFile(true);
+      const fileData = await compressImageFile(file, 1000, 0.75);
 
-      if (formType === 'certificates') {
-        setCertForm(prev => ({ ...prev, uploadedFile: fileData }));
-      } else if (formType === 'courses') {
-        setCourseForm(prev => ({ ...prev, uploadedFile: fileData }));
-      } else if (formType === 'hackathons') {
-        setHackathonForm(prev => ({ ...prev, uploadedFile: fileData }));
-      } else if (formType === 'projects') {
-        setProjectForm(prev => ({ ...prev, uploadedFile: fileData }));
+      if (fileData) {
+        if (formType === 'certificates') {
+          setCertForm(prev => ({ ...prev, uploadedFile: fileData }));
+        } else if (formType === 'courses') {
+          setCourseForm(prev => ({ ...prev, uploadedFile: fileData }));
+        } else if (formType === 'hackathons') {
+          setHackathonForm(prev => ({ ...prev, uploadedFile: fileData }));
+        } else if (formType === 'projects') {
+          setProjectForm(prev => ({ ...prev, uploadedFile: fileData }));
+        }
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('File processing error:', err);
+      alert('Could not process file. Please upload a standard image or PDF.');
+    } finally {
+      setIsCompressingFile(false);
+    }
   };
 
   if (!isOpen) return null;

@@ -511,20 +511,11 @@ export const StudentCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }
                     </strong>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Currently Learning / Enrolled:</span>
                     <strong style={{ fontSize: '0.85rem', color: 'var(--accent-teal)' }}>
                       {enrolledCount} Students
                     </strong>
-                  </div>
-
-                  <div className="progress-bar-container">
-                    <div className="progress-bar-fill" style={{ width: `${Math.min(100, completionPct * 1.5)}%` }}></div>
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    <span>Cohort Completion Rate</span>
-                    <span>{Math.min(100, completionPct * 1.5)}% Rate</span>
                   </div>
                 </div>
 

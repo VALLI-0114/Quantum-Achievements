@@ -152,7 +152,7 @@ export const AddParticipantModal = ({
               width: 34,
               height: 34,
               borderRadius: '8px',
-              background: isStudent ? '#EFF6FF' : '#F5F3FF',
+              background: isStudent ? 'var(--primary-light)' : 'var(--secondary-light)',
               color: isStudent ? 'var(--primary)' : 'var(--secondary)',
               display: 'flex',
               alignItems: 'center',

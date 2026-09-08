@@ -130,7 +130,7 @@ export const FacultyCertificates = ({ onOpenCertificate, onOpenProfile, onAddCer
               width: 44,
               height: 44,
               borderRadius: '10px',
-              background: '#F5F3FF',
+              background: 'var(--secondary-light)',
               color: 'var(--secondary)',
               display: 'flex',
               alignItems: 'center',

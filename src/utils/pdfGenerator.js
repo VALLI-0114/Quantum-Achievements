@@ -22,7 +22,7 @@ const drawHeaderBanner = (doc, title, subtitle, isFaculty = false, isStudent = f
   
   // Color determination
   if (isFaculty) {
-    doc.setFillColor(124, 58, 237); // Purple for faculty
+    doc.setFillColor(114, 47, 55); // Purple for faculty
   } else if (isStudent) {
     doc.setFillColor(37, 99, 235); // Royal Blue for student
   } else {
@@ -97,7 +97,7 @@ export const downloadCompleteInstitutionalPDF = (dbData) => {
   y += 36;
 
   // --- SECTION 1: FACULTY ACHIEVEMENTS ---
-  doc.setFillColor(124, 58, 237);
+  doc.setFillColor(114, 47, 55);
   doc.rect(15, y, width - 30, 8, 'F');
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
@@ -107,7 +107,7 @@ export const downloadCompleteInstitutionalPDF = (dbData) => {
 
   // 1.1 Faculty Courses
   checkPage();
-  doc.setTextColor(124, 58, 237);
+  doc.setTextColor(114, 47, 55);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.text("1.1 Quantum Courses Completed by Faculty", 15, y);
@@ -135,7 +135,7 @@ export const downloadCompleteInstitutionalPDF = (dbData) => {
   // 1.2 Faculty Certificates
   y += 4;
   checkPage();
-  doc.setTextColor(124, 58, 237);
+  doc.setTextColor(114, 47, 55);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.text("1.2 Quantum Certifications Earned by Faculty", 15, y);
@@ -163,7 +163,7 @@ export const downloadCompleteInstitutionalPDF = (dbData) => {
   // 1.3 Faculty Projects
   y += 4;
   checkPage();
-  doc.setTextColor(124, 58, 237);
+  doc.setTextColor(114, 47, 55);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.text("1.3 Faculty Quantum Research Projects", 15, y);
@@ -190,7 +190,7 @@ export const downloadCompleteInstitutionalPDF = (dbData) => {
   // 1.4 Faculty Research Papers
   y += 4;
   checkPage();
-  doc.setTextColor(124, 58, 237);
+  doc.setTextColor(114, 47, 55);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.text("1.4 Faculty Quantum Publications", 15, y);
@@ -216,7 +216,7 @@ export const downloadCompleteInstitutionalPDF = (dbData) => {
   // 1.5 Faculty Hackathons
   y += 4;
   checkPage();
-  doc.setTextColor(124, 58, 237);
+  doc.setTextColor(114, 47, 55);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.text("1.5 Faculty Quantum Hackathon Participation", 15, y);
@@ -373,7 +373,7 @@ export const downloadAllFacultyDataPDF = (dbData) => {
   y += 28;
 
   // 1. Courses
-  doc.setTextColor(124, 58, 237);
+  doc.setTextColor(114, 47, 55);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.text("1. Faculty Quantum Courses", 15, y);
@@ -400,7 +400,7 @@ export const downloadAllFacultyDataPDF = (dbData) => {
   // 2. Certificates
   y += 4;
   checkPage();
-  doc.setTextColor(124, 58, 237);
+  doc.setTextColor(114, 47, 55);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.text("2. Faculty Certifications", 15, y);
@@ -427,7 +427,7 @@ export const downloadAllFacultyDataPDF = (dbData) => {
   // 3. Projects
   y += 4;
   checkPage();
-  doc.setTextColor(124, 58, 237);
+  doc.setTextColor(114, 47, 55);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.text("3. Faculty Quantum Projects", 15, y);
@@ -454,7 +454,7 @@ export const downloadAllFacultyDataPDF = (dbData) => {
   // 4. Papers
   y += 4;
   checkPage();
-  doc.setTextColor(124, 58, 237);
+  doc.setTextColor(114, 47, 55);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.text("4. Faculty Research Publications", 15, y);
@@ -478,7 +478,7 @@ export const downloadAllFacultyDataPDF = (dbData) => {
   // 5. Hackathons
   y += 4;
   checkPage();
-  doc.setTextColor(124, 58, 237);
+  doc.setTextColor(114, 47, 55);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.text("5. Faculty Hackathon Participations", 15, y);
@@ -929,7 +929,7 @@ export const downloadProjectReportPDF = ({ project, roleType = "Faculty" }) => {
   y += 34;
 
   // Faculty Leads
-  doc.setTextColor(124, 58, 237);
+  doc.setTextColor(114, 47, 55);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10.5);
   doc.text(`Faculty Research Leads & Mentors (${(project.facultyInvolved || []).length})`, 15, y);
@@ -1016,7 +1016,7 @@ export const downloadPaperReportPDF = ({ paper, facultyAuthors = [], studentAuth
   y += 50;
 
   // Authors
-  doc.setTextColor(124, 58, 237);
+  doc.setTextColor(114, 47, 55);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10.5);
   doc.text("Faculty Authors", 15, y);
@@ -1162,7 +1162,7 @@ export const downloadCertificatePDF = ({
   doc.setLineWidth(3);
   doc.roundedRect(10, 10, width - 20, height - 20, 4, 4, 'S');
 
-  doc.setDrawColor(124, 58, 237);
+  doc.setDrawColor(114, 47, 55);
   doc.setLineWidth(0.8);
   doc.roundedRect(14, 14, width - 28, height - 28, 2, 2, 'S');
 
@@ -1198,7 +1198,7 @@ export const downloadCertificatePDF = ({
   doc.setFontSize(12);
   doc.text("For distinguished proficiency and verified completion of the program:", width / 2, 102, { align: 'center' });
 
-  doc.setTextColor(124, 58, 237);
+  doc.setTextColor(114, 47, 55);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(15);
   const certLines = doc.splitTextToSize(certificateTitle, width - 60);

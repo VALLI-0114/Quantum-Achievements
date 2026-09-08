@@ -43,7 +43,7 @@ export const FacultySection = ({ onOpenCertificate, onOpenProfile, onOpenAddModa
             className="btn btn-outline"
             onClick={handleDownloadAllFacultyReport}
             title="Download complete PDF report of all faculty achievements"
-            style={{ fontWeight: 700, borderColor: '#C4B5FD', color: '#5B21B6', background: '#F5F3FF' }}
+            style={{ fontWeight: 700, borderColor: 'var(--secondary-border)', color: 'var(--secondary)', background: 'var(--secondary-light)' }}
           >
             <FileDown size={15} /> Export All Faculty Data (PDF)
           </button>

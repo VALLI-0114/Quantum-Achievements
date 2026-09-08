@@ -190,7 +190,7 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
               width: 36,
               height: 36,
               borderRadius: '8px',
-              background: '#F5F3FF',
+              background: 'var(--secondary-light)',
               color: 'var(--secondary)',
               display: 'flex',
               alignItems: 'center',
@@ -382,13 +382,13 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
               {/* Header Badge */}
               <div style={{
                 display: 'inline-block',
-                background: '#F5F3FF',
-                border: '1px solid #DDD6FE',
+                background: 'var(--secondary-light)',
+                border: '1px solid var(--secondary-border)',
                 borderRadius: '20px',
                 padding: '0.25rem 1rem',
                 fontSize: '0.75rem',
                 fontWeight: 700,
-                color: '#4F46E5',
+                color: 'var(--secondary)',
                 letterSpacing: '0.08em',
                 marginBottom: '0.6rem'
               }}>

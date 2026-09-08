@@ -649,10 +649,10 @@ export const AddAchievementModal = ({
                 alignItems: 'center',
                 gap: '1.25rem',
                 marginBottom: '1.25rem',
-                background: audience === 'faculty' ? '#F5F3FF' : '#EFF6FF',
+                background: audience === 'faculty' ? 'var(--secondary-light)' : 'var(--primary-light)',
                 padding: '0.75rem 1.25rem',
                 borderRadius: '10px',
-                border: `1px solid ${audience === 'faculty' ? '#DDD6FE' : '#BFDBFE'}`
+                border: `1px solid ${audience === 'faculty' ? 'var(--secondary-border)' : 'var(--primary-border)'}`
               }}>
                 <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>Target Section:</span>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', fontSize: '0.88rem', fontWeight: audience === 'faculty' ? 700 : 500 }}>

@@ -196,7 +196,7 @@ export const ProfileModal = ({ isOpen, onClose, personId, roleType = 'student', 
               <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--primary)' }}>{personCourses.length}</div>
               <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Courses Completed</div>
             </div>
-            <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: '10px', padding: '0.75rem', textAlign: 'center' }}>
+            <div style={{ background: 'var(--secondary-light)', border: '1px solid var(--secondary-border)', borderRadius: '10px', padding: '0.75rem', textAlign: 'center' }}>
               <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--secondary)' }}>{personCertificates.length}</div>
               <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Certificates</div>
             </div>

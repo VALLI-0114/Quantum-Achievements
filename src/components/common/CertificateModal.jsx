@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   Download,
@@ -12,15 +12,24 @@ import {
   Maximize2,
   Minimize2,
   Printer,
-  FileQuestion
+  FileQuestion,
+  UploadCloud,
+  CheckCircle2,
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
+import { compressImageFile } from '../../utils/imageCompressor';
 
-export const CertificateModal = ({ isOpen, onClose, certData }) => {
+export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }) => {
   if (!isOpen || !certData) return null;
 
   const [zoomLevel, setZoomLevel] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+
+  const fileInputRef = useRef(null);
 
   const {
     recipientName = "Candidate",
@@ -33,7 +42,17 @@ export const CertificateModal = ({ isOpen, onClose, certData }) => {
     uploadedFile = null
   } = certData;
 
-  const fileObj = uploadedFile || certData.fileData || certData.document || null;
+  // Local state for uploaded file to allow instant update when user uploads within modal
+  const [currentFile, setCurrentFile] = useState(uploadedFile || certData.fileData || certData.document || null);
+
+  useEffect(() => {
+    setCurrentFile(uploadedFile || certData.fileData || certData.document || null);
+    setZoomLevel(1);
+    setRotation(0);
+    setUploadSuccess(false);
+  }, [certData, uploadedFile]);
+
+  const fileObj = currentFile;
   const fileUrl = typeof fileObj === 'string' ? fileObj : (fileObj?.dataUrl || fileObj?.url || null);
   const fileName = (typeof fileObj === 'object' && fileObj?.name) ? fileObj.name : 'Certificate_Document';
   const fileSize = (typeof fileObj === 'object' && fileObj?.size) ? fileObj.size : '';
@@ -100,8 +119,44 @@ export const CertificateModal = ({ isOpen, onClose, certData }) => {
     }
   };
 
+  // Direct file attachment handler
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const compressed = await compressImageFile(file, 1200, 0.8);
+      if (compressed) {
+        setCurrentFile(compressed);
+        setUploadSuccess(true);
+        setTimeout(() => setUploadSuccess(false), 4000);
+
+        if (onAttachDocument) {
+          const targetKey = credentialId || certData.id || certData.code || certificateTitle;
+          await onAttachDocument(targetKey, compressed);
+        }
+      }
+    } catch (err) {
+      console.error("Certificate document attachment failed:", err);
+      alert("Could not process file. Please upload an image or PDF.");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <div className={`modal-overlay ${isFullscreen ? 'fullscreen-overlay' : ''}`} onClick={onClose} style={{ zIndex: 1100 }}>
+      {/* Hidden File Input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,application/pdf"
+        style={{ display: 'none' }}
+        onChange={handleFileSelect}
+      />
+
       <div
         className={`modal-content ${isFullscreen ? 'modal-fullscreen' : 'modal-xl'}`}
         onClick={(e) => e.stopPropagation()}
@@ -145,6 +200,11 @@ export const CertificateModal = ({ isOpen, onClose, certData }) => {
                 <span className="metric-pill success" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
                   <ShieldCheck size={12} /> Verified Credential
                 </span>
+                {uploadSuccess && (
+                  <span className="metric-pill success" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: '#DCFCE7', color: '#166534' }}>
+                    <CheckCircle2 size={12} /> Saved to Database!
+                  </span>
+                )}
               </div>
               <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.15rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {certificateTitle} • <strong style={{ color: 'var(--text-primary)' }}>{issuer}</strong>
@@ -197,12 +257,26 @@ export const CertificateModal = ({ isOpen, onClose, certData }) => {
             )}
           </div>
 
-          {hasUploadedFile && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-teal)', fontWeight: 600, fontSize: '0.78rem' }}>
-              <FileText size={14} />
-              <span>{fileName} {fileSize ? `(${fileSize})` : ''}</span>
-            </div>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            {hasUploadedFile && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-teal)', fontWeight: 600, fontSize: '0.78rem' }}>
+                <FileText size={14} />
+                <span>{fileName} {fileSize ? `(${fileSize})` : ''}</span>
+              </div>
+            )}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="btn btn-outline btn-sm"
+              style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+            >
+              {isUploading ? (
+                <><Loader2 size={13} className="spin-animate" /> Saving to DB...</>
+              ) : (
+                <><UploadCloud size={13} /> {hasUploadedFile ? 'Replace Document' : 'Attach Scan'}</>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Certificate Display Area */}
@@ -261,7 +335,7 @@ export const CertificateModal = ({ isOpen, onClose, certData }) => {
             /* Empty State if No File was Uploaded */
             <div style={{
               textAlign: 'center',
-              padding: '3rem 2rem',
+              padding: '2.5rem 2rem',
               color: '#94A3B8',
               maxWidth: '520px',
               background: '#1E293B',
@@ -286,8 +360,31 @@ export const CertificateModal = ({ isOpen, onClose, certData }) => {
                 No Scanned Document Attached
               </h4>
               <p style={{ fontSize: '0.88rem', color: '#94A3B8', lineHeight: 1.5, marginBottom: '1.25rem' }}>
-                This record was registered with verified credential metadata (<strong style={{ color: '#E2E8F0' }}>{credentialId}</strong>), but no physical image or PDF document scan was uploaded during entry.
+                This record is registered with verified credential metadata (<strong style={{ color: '#E2E8F0' }}>{credentialId}</strong>). You can attach the real certificate image or PDF scan below to store it in Supabase DB permanently.
               </p>
+
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="btn btn-primary"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.7rem 1.4rem',
+                  fontWeight: 600,
+                  fontSize: '0.9rem',
+                  marginBottom: '1.5rem',
+                  boxShadow: '0 4px 14px rgba(79, 70, 229, 0.4)'
+                }}
+              >
+                {isUploading ? (
+                  <><Loader2 size={18} className="spin-animate" /> Processing & Saving to DB...</>
+                ) : (
+                  <><UploadCloud size={18} /> Upload Certificate Document (Image / PDF)</>
+                )}
+              </button>
+
               <div style={{
                 background: '#0F172A',
                 borderRadius: '8px',
@@ -367,7 +464,7 @@ export const CertificateModal = ({ isOpen, onClose, certData }) => {
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-            {hasUploadedFile && (
+            {hasUploadedFile ? (
               <>
                 <button
                   className="btn btn-outline"
@@ -391,6 +488,16 @@ export const CertificateModal = ({ isOpen, onClose, certData }) => {
                   <Download size={15} /> Download Real Certificate
                 </button>
               </>
+            ) : (
+              <button
+                className="btn btn-primary"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+              >
+                {isUploading ? <Loader2 size={15} className="spin-animate" /> : <UploadCloud size={15} />}
+                Upload Document Now
+              </button>
             )}
           </div>
         </div>
@@ -398,3 +505,4 @@ export const CertificateModal = ({ isOpen, onClose, certData }) => {
     </div>
   );
 };
+

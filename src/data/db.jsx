@@ -43,17 +43,7 @@ export const QuantumDBProvider = ({ children }) => {
     }
   };
 
-  const serializeFile = (file) => {
-    if (!file) return null;
-    if (typeof file === 'string') return file;
-    try {
-      return JSON.stringify(file);
-    } catch {
-      return null;
-    }
-  };
-
-  // Helper to push full state to Supabase dedicated tables + unified realtime table
+  // Helper to push full state to Supabase dedicated tables + unified realtime documents store
   const persistToSupabase = useCallback(async (stateToSave) => {
     const jsonStr = getJson(stateToSave);
     if (!jsonStr || jsonStr === lastSyncedHash.current) {
@@ -77,12 +67,85 @@ export const QuantumDBProvider = ({ children }) => {
           }, { onConflict: 'id' })
       );
 
-      // 2. Faculty Profiles
+      // 2. Save individual certificate documents & images to DB
+      stateToSave.courses?.forEach(c => {
+        if (c.uploadedFile) {
+          tableUpserts.push(
+            supabase.from('quantum_portal_data').upsert({
+              id: `doc_${c.id}`,
+              data: { recordId: c.id, ...c.uploadedFile },
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'id' })
+          );
+        }
+        c.facultyCompletions?.forEach(fc => {
+          if (fc.uploadedFile) {
+            const docKey = fc.certificateId || `${c.id}_${fc.facultyId}`;
+            tableUpserts.push(
+              supabase.from('quantum_portal_data').upsert({
+                id: `doc_${docKey}`,
+                data: { recordId: docKey, ...fc.uploadedFile },
+                updated_at: new Date().toISOString()
+              }, { onConflict: 'id' })
+            );
+          }
+        });
+        c.studentCompletions?.forEach(sc => {
+          if (sc.uploadedFile) {
+            const docKey = sc.certificateId || `${c.id}_${sc.studentId}`;
+            tableUpserts.push(
+              supabase.from('quantum_portal_data').upsert({
+                id: `doc_${docKey}`,
+                data: { recordId: docKey, ...sc.uploadedFile },
+                updated_at: new Date().toISOString()
+              }, { onConflict: 'id' })
+            );
+          }
+        });
+      });
+
+      stateToSave.certificates?.forEach(cert => {
+        if (cert.uploadedFile) {
+          tableUpserts.push(
+            supabase.from('quantum_portal_data').upsert({
+              id: `doc_${cert.id}`,
+              data: { recordId: cert.id, ...cert.uploadedFile },
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'id' })
+          );
+        }
+        cert.facultyRecipients?.forEach(fr => {
+          if (fr.uploadedFile) {
+            const docKey = fr.credentialId || `${cert.id}_${fr.facultyId}`;
+            tableUpserts.push(
+              supabase.from('quantum_portal_data').upsert({
+                id: `doc_${docKey}`,
+                data: { recordId: docKey, ...fr.uploadedFile },
+                updated_at: new Date().toISOString()
+              }, { onConflict: 'id' })
+            );
+          }
+        });
+        cert.studentRecipients?.forEach(sr => {
+          if (sr.uploadedFile) {
+            const docKey = sr.credentialId || `${cert.id}_${sr.studentId}`;
+            tableUpserts.push(
+              supabase.from('quantum_portal_data').upsert({
+                id: `doc_${docKey}`,
+                data: { recordId: docKey, ...sr.uploadedFile },
+                updated_at: new Date().toISOString()
+              }, { onConflict: 'id' })
+            );
+          }
+        });
+      });
+
+      // 3. Faculty Profiles
       if (stateToSave.faculty && stateToSave.faculty.length > 0) {
         tableUpserts.push(supabase.from('faculty').upsert(stateToSave.faculty, { onConflict: 'id' }));
       }
 
-      // 3. Student Profiles
+      // 4. Student Profiles
       if (stateToSave.students && stateToSave.students.length > 0) {
         tableUpserts.push(supabase.from('students').upsert(stateToSave.students.map(s => ({
           id: s.id,
@@ -95,7 +158,7 @@ export const QuantumDBProvider = ({ children }) => {
         })), { onConflict: 'id' }));
       }
 
-      // 4. Faculty Courses & Student Courses
+      // 5. Faculty Courses & Student Courses
       if (stateToSave.courses && stateToSave.courses.length > 0) {
         const facCourseRows = [];
         const stuCourseRows = [];
@@ -181,7 +244,7 @@ export const QuantumDBProvider = ({ children }) => {
         if (stuCourseRows.length > 0) tableUpserts.push(supabase.from('student_courses').upsert(stuCourseRows, { onConflict: 'id' }));
       }
 
-      // 5. Faculty Certificates & Student Certificates
+      // 6. Faculty Certificates & Student Certificates
       if (stateToSave.certificates && stateToSave.certificates.length > 0) {
         const facCertRows = [];
         const stuCertRows = [];
@@ -259,7 +322,7 @@ export const QuantumDBProvider = ({ children }) => {
         if (stuCertRows.length > 0) tableUpserts.push(supabase.from('student_certificates').upsert(stuCertRows, { onConflict: 'id' }));
       }
 
-      // 6. Faculty Projects & Student Projects
+      // 7. Faculty Projects & Student Projects
       if (stateToSave.projects && stateToSave.projects.length > 0) {
         const facProjRows = [];
         const stuProjRows = [];
@@ -305,7 +368,7 @@ export const QuantumDBProvider = ({ children }) => {
         if (stuProjRows.length > 0) tableUpserts.push(supabase.from('student_projects').upsert(stuProjRows, { onConflict: 'id' }));
       }
 
-      // 7. Faculty Papers & Student Papers
+      // 8. Faculty Papers & Student Papers
       if (stateToSave.researchPapers && stateToSave.researchPapers.length > 0) {
         const facPaperRows = [];
         const stuPaperRows = [];
@@ -349,7 +412,7 @@ export const QuantumDBProvider = ({ children }) => {
         if (stuPaperRows.length > 0) tableUpserts.push(supabase.from('student_papers').upsert(stuPaperRows, { onConflict: 'id' }));
       }
 
-      // 8. Faculty Hackathons & Student Hackathons
+      // 9. Faculty Hackathons & Student Hackathons
       if (stateToSave.hackathons && stateToSave.hackathons.length > 0) {
         const facHckRows = [];
         const stuHckRows = [];
@@ -410,7 +473,7 @@ export const QuantumDBProvider = ({ children }) => {
     }
   }, []);
 
-  // 1. Initial Load directly from Supabase Dedicated Tables
+  // 1. Initial Load directly from Supabase Dedicated Tables + Realtime Documents Store
   const fetchFromSupabase = useCallback(async () => {
     try {
       setCloudStatus('connecting');
@@ -422,7 +485,7 @@ export const QuantumDBProvider = ({ children }) => {
         facPapRes, stuPapRes,
         facHckRes, stuHckRes,
         facRes, stuRes,
-        uniRes
+        allPortalRowsRes
       ] = await Promise.allSettled([
         supabase.from('faculty_courses').select('*'),
         supabase.from('student_courses').select('*'),
@@ -436,17 +499,69 @@ export const QuantumDBProvider = ({ children }) => {
         supabase.from('student_hackathons').select('*'),
         supabase.from('faculty').select('*'),
         supabase.from('students').select('*'),
-        supabase.from('quantum_portal_data').select('data, updated_at').eq('id', 'main_state').maybeSingle()
+        supabase.from('quantum_portal_data').select('*')
       ]);
 
-      const parseFile = (val) => {
-        if (!val) return null;
-        if (typeof val === 'object') return val;
-        try {
-          return JSON.parse(val);
-        } catch {
-          return { dataUrl: val, name: 'Document' };
-        }
+      // Build Document Map for all uploaded images and scans in Supabase
+      const docMap = new Map();
+      let mainStateRow = null;
+
+      if (allPortalRowsRes.status === 'fulfilled' && allPortalRowsRes.value.data) {
+        allPortalRowsRes.value.data.forEach(row => {
+          if (row.id === 'main_state') {
+            mainStateRow = row;
+            // Also index files from main_state
+            const state = row.data || {};
+            state.courses?.forEach(c => {
+              if (c.uploadedFile) {
+                docMap.set(c.id, c.uploadedFile);
+                docMap.set(`doc_${c.id}`, c.uploadedFile);
+              }
+              c.facultyCompletions?.forEach(fc => {
+                if (fc.uploadedFile) {
+                  if (fc.certificateId) docMap.set(fc.certificateId, fc.uploadedFile);
+                  docMap.set(`${c.id}_${fc.facultyId}`, fc.uploadedFile);
+                }
+              });
+              c.studentCompletions?.forEach(sc => {
+                if (sc.uploadedFile) {
+                  if (sc.certificateId) docMap.set(sc.certificateId, sc.uploadedFile);
+                  docMap.set(`${c.id}_${sc.studentId}`, sc.uploadedFile);
+                }
+              });
+            });
+            state.certificates?.forEach(cert => {
+              if (cert.uploadedFile) {
+                docMap.set(cert.id, cert.uploadedFile);
+                docMap.set(`doc_${cert.id}`, cert.uploadedFile);
+              }
+              cert.facultyRecipients?.forEach(fr => {
+                if (fr.uploadedFile) {
+                  if (fr.credentialId) docMap.set(fr.credentialId, fr.uploadedFile);
+                  docMap.set(`${cert.id}_${fr.facultyId}`, fr.uploadedFile);
+                }
+              });
+              cert.studentRecipients?.forEach(sr => {
+                if (sr.uploadedFile) {
+                  if (sr.credentialId) docMap.set(sr.credentialId, sr.uploadedFile);
+                  docMap.set(`${cert.id}_${sr.studentId}`, sr.uploadedFile);
+                }
+              });
+            });
+          } else if (row.id?.startsWith('doc_') && row.data) {
+            const rawId = row.id.replace('doc_', '');
+            docMap.set(rawId, row.data);
+            docMap.set(row.id, row.data);
+            if (row.data.recordId) docMap.set(row.data.recordId, row.data);
+          }
+        });
+      }
+
+      const getDoc = (primaryId, secondaryId, tertiaryId) => {
+        if (primaryId && docMap.has(primaryId)) return docMap.get(primaryId);
+        if (secondaryId && docMap.has(secondaryId)) return docMap.get(secondaryId);
+        if (tertiaryId && docMap.has(tertiaryId)) return docMap.get(tertiaryId);
+        return null;
       };
 
       let loadedFaculty = [];
@@ -483,7 +598,7 @@ export const QuantumDBProvider = ({ children }) => {
       if (facCrsRes.status === 'fulfilled' && facCrsRes.value.data && facCrsRes.value.data.length > 0) {
         hasDedicatedData = true;
         facCrsRes.value.data.forEach(fc => {
-          const file = parseFile(fc.uploaded_file);
+          const file = getDoc(fc.id, fc.certificate_id, `${fc.id}_${fc.faculty_id}`);
           loadedCourses.push({
             id: fc.id,
             code: fc.course_code,
@@ -512,7 +627,7 @@ export const QuantumDBProvider = ({ children }) => {
       if (stuCrsRes.status === 'fulfilled' && stuCrsRes.value.data && stuCrsRes.value.data.length > 0) {
         hasDedicatedData = true;
         stuCrsRes.value.data.forEach(sc => {
-          const file = parseFile(sc.uploaded_file);
+          const file = getDoc(sc.id, sc.certificate_id, `${sc.id}_${sc.student_id}`);
           loadedCourses.push({
             id: sc.id,
             code: sc.course_code,
@@ -541,7 +656,7 @@ export const QuantumDBProvider = ({ children }) => {
       if (facCertRes.status === 'fulfilled' && facCertRes.value.data && facCertRes.value.data.length > 0) {
         hasDedicatedData = true;
         facCertRes.value.data.forEach(fc => {
-          const file = parseFile(fc.uploaded_file);
+          const file = getDoc(fc.id, fc.credential_id, `${fc.id}_${fc.faculty_id}`);
           loadedCertificates.push({
             id: fc.id,
             title: fc.title,
@@ -567,7 +682,7 @@ export const QuantumDBProvider = ({ children }) => {
       if (stuCertRes.status === 'fulfilled' && stuCertRes.value.data && stuCertRes.value.data.length > 0) {
         hasDedicatedData = true;
         stuCertRes.value.data.forEach(sc => {
-          const file = parseFile(sc.uploaded_file);
+          const file = getDoc(sc.id, sc.credential_id, `${sc.id}_${sc.student_id}`);
           loadedCertificates.push({
             id: sc.id,
             title: sc.title,
@@ -593,7 +708,7 @@ export const QuantumDBProvider = ({ children }) => {
       if (facPrjRes.status === 'fulfilled' && facPrjRes.value.data && facPrjRes.value.data.length > 0) {
         hasDedicatedData = true;
         facPrjRes.value.data.forEach(fp => {
-          const file = parseFile(fp.uploaded_file);
+          const file = getDoc(fp.id);
           loadedProjects.push({
             id: fp.id,
             title: fp.title,
@@ -619,7 +734,7 @@ export const QuantumDBProvider = ({ children }) => {
       if (stuPrjRes.status === 'fulfilled' && stuPrjRes.value.data && stuPrjRes.value.data.length > 0) {
         hasDedicatedData = true;
         stuPrjRes.value.data.forEach(sp => {
-          const file = parseFile(sp.uploaded_file);
+          const file = getDoc(sp.id);
           loadedProjects.push({
             id: sp.id,
             title: sp.title,
@@ -685,7 +800,7 @@ export const QuantumDBProvider = ({ children }) => {
       if (facHckRes.status === 'fulfilled' && facHckRes.value.data && facHckRes.value.data.length > 0) {
         hasDedicatedData = true;
         facHckRes.value.data.forEach(fh => {
-          const file = parseFile(fh.uploaded_file);
+          const file = getDoc(fh.id);
           loadedHackathons.push({
             id: fh.id,
             name: fh.hackathon_name,
@@ -712,7 +827,7 @@ export const QuantumDBProvider = ({ children }) => {
       if (stuHckRes.status === 'fulfilled' && stuHckRes.value.data && stuHckRes.value.data.length > 0) {
         hasDedicatedData = true;
         stuHckRes.value.data.forEach(sh => {
-          const file = parseFile(sh.uploaded_file);
+          const file = getDoc(sh.id);
           loadedHackathons.push({
             id: sh.id,
             name: sh.hackathon_name,
@@ -781,8 +896,8 @@ export const QuantumDBProvider = ({ children }) => {
       }
 
       // Fallback: unified quantum_portal_data
-      if (uniRes.status === 'fulfilled' && uniRes.value.data && uniRes.value.data.data) {
-        const cloudData = uniRes.value.data.data;
+      if (mainStateRow && mainStateRow.data) {
+        const cloudData = mainStateRow.data;
         const assembled = {
           faculty: Array.isArray(cloudData.faculty) ? cloudData.faculty : [],
           students: Array.isArray(cloudData.students) ? cloudData.students : [],
@@ -795,7 +910,7 @@ export const QuantumDBProvider = ({ children }) => {
         lastSyncedHash.current = getJson(assembled);
         setData(assembled);
         setCloudStatus('synced');
-        setLastSyncTime(uniRes.value.data.updated_at ? new Date(uniRes.value.data.updated_at) : new Date());
+        setLastSyncTime(mainStateRow.updated_at ? new Date(mainStateRow.updated_at) : new Date());
 
         // Backfill dedicated separate tables
         persistToSupabase(assembled);
@@ -864,6 +979,99 @@ export const QuantumDBProvider = ({ children }) => {
       return nextData;
     });
   }, [persistToSupabase]);
+
+  // Direct Attachment of Document / Image to Record in Supabase DB
+  const attachDocumentToRecord = async (recordId, fileData) => {
+    if (!recordId || !fileData) return;
+
+    const normId = String(recordId).trim().toLowerCase();
+
+    try {
+      // 1. Save directly as permanent document in Supabase
+      await supabase.from('quantum_portal_data').upsert({
+        id: `doc_${recordId}`,
+        data: { recordId, ...fileData },
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' });
+    } catch (e) {
+      console.warn("Direct document upsert error:", e);
+    }
+
+    // 2. Update memory state & sync main_state
+    updateDataAndSync(prev => {
+      const updatedCourses = prev.courses.map(c => {
+        const cCodeNorm = String(c.code || '').trim().toLowerCase();
+        const cNameNorm = String(c.name || '').trim().toLowerCase();
+        const cIdNorm = String(c.id || '').trim().toLowerCase();
+
+        const isCourseMatch = cIdNorm === normId || cCodeNorm === normId || (cCodeNorm && normId.includes(cCodeNorm)) || normId.includes(cNameNorm);
+        const hasFacMatch = (c.facultyCompletions || []).some(fc => 
+          String(fc.certificateId || '').trim().toLowerCase() === normId ||
+          String(fc.facultyId || '').trim().toLowerCase() === normId ||
+          String(fc.facultyName || '').trim().toLowerCase() === normId
+        );
+        const hasStuMatch = (c.studentCompletions || []).some(sc => 
+          String(sc.certificateId || '').trim().toLowerCase() === normId ||
+          String(sc.studentId || '').trim().toLowerCase() === normId ||
+          String(sc.studentName || '').trim().toLowerCase() === normId
+        );
+
+        if (!isCourseMatch && !hasFacMatch && !hasStuMatch) return c;
+
+        return {
+          ...c,
+          uploadedFile: fileData,
+          facultyCompletions: (c.facultyCompletions || []).map(fc => {
+            const fcMatch = isCourseMatch || hasFacMatch || String(fc.certificateId || '').trim().toLowerCase() === normId || String(fc.facultyId || '').trim().toLowerCase() === normId;
+            return fcMatch ? { ...fc, uploadedFile: fileData } : fc;
+          }),
+          studentCompletions: (c.studentCompletions || []).map(sc => {
+            const scMatch = isCourseMatch || hasStuMatch || String(sc.certificateId || '').trim().toLowerCase() === normId || String(sc.studentId || '').trim().toLowerCase() === normId;
+            return scMatch ? { ...sc, uploadedFile: fileData } : sc;
+          })
+        };
+      });
+
+      const updatedCerts = prev.certificates.map(cert => {
+        const certCodeNorm = String(cert.code || '').trim().toLowerCase();
+        const certTitleNorm = String(cert.title || '').trim().toLowerCase();
+        const certIdNorm = String(cert.id || '').trim().toLowerCase();
+
+        const isCertMatch = certIdNorm === normId || certCodeNorm === normId || normId.includes(certTitleNorm) || (certCodeNorm && normId.includes(certCodeNorm));
+        const hasFacMatch = (cert.facultyRecipients || []).some(fr => 
+          String(fr.credentialId || '').trim().toLowerCase() === normId ||
+          String(fr.facultyId || '').trim().toLowerCase() === normId ||
+          String(fr.facultyName || '').trim().toLowerCase() === normId
+        );
+        const hasStuMatch = (cert.studentRecipients || []).some(sr => 
+          String(sr.credentialId || '').trim().toLowerCase() === normId ||
+          String(sr.studentId || '').trim().toLowerCase() === normId ||
+          String(sr.studentName || '').trim().toLowerCase() === normId
+        );
+
+        if (!isCertMatch && !hasFacMatch && !hasStuMatch) return cert;
+
+        return {
+          ...cert,
+          uploadedFile: fileData,
+          facultyRecipients: (cert.facultyRecipients || []).map(fr => {
+            const frMatch = isCertMatch || hasFacMatch || String(fr.credentialId || '').trim().toLowerCase() === normId || String(fr.facultyId || '').trim().toLowerCase() === normId;
+            return frMatch ? { ...fr, uploadedFile: fileData } : fr;
+          }),
+          studentRecipients: (cert.studentRecipients || []).map(sr => {
+            const srMatch = isCertMatch || hasStuMatch || String(sr.credentialId || '').trim().toLowerCase() === normId || String(sr.studentId || '').trim().toLowerCase() === normId;
+            return srMatch ? { ...sr, uploadedFile: fileData } : sr;
+          })
+        };
+      });
+
+      return {
+        ...prev,
+        courses: updatedCourses,
+        certificates: updatedCerts
+      };
+    });
+  };
 
   // Helper getters
   const getFacultyById = (id) => data.faculty.find(f => f.id === id);
@@ -1283,6 +1491,7 @@ export const QuantumDBProvider = ({ children }) => {
       supabase,
       forceCloudSync,
       refreshFromCloud: fetchFromSupabase,
+      attachDocumentToRecord,
       getFacultyById,
       getStudentById,
       addCourse,

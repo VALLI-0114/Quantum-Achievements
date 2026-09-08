@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { QuantumDBProvider } from './data/db';
+import { QuantumDBProvider, useQuantumDB } from './data/db';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 import { OverviewSection } from './components/overview/OverviewSection';
@@ -15,6 +15,8 @@ import { AddAchievementModal } from './components/common/AddAchievementModal';
 import { GlobalSearchModal } from './components/common/GlobalSearchModal';
 
 const MainContent = () => {
+  const { attachDocumentToRecord } = useQuantumDB();
+
   const [activeView, setActiveView] = useState(() => {
     const hash = window.location.hash.replace('#', '');
     return hash || 'home';
@@ -165,6 +167,7 @@ const MainContent = () => {
         isOpen={certificateModal.isOpen}
         onClose={() => setCertificateModal({ isOpen: false, data: null })}
         certData={certificateModal.data}
+        onAttachDocument={attachDocumentToRecord}
       />
 
       <ProfileModal

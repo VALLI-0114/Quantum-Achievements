@@ -229,6 +229,11 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  max-width: calc(100vw - var(--sidebar-width));
+  width: calc(100% - var(--sidebar-width));
+  overflow-x: hidden;
+  box-sizing: border-box;
   transition: margin-left var(--transition-smooth);
 }
 

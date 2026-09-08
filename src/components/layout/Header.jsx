@@ -78,7 +78,7 @@ export const Header = ({ onOpenSearch, onOpenAddModal, onToggleSidebar }) => {
     <>
       <header className="app-header">
         <div className="header-left">
-          <button className="mobile-menu-btn" onClick={onToggleSidebar} aria-label="Toggle Navigation" style={{ display: 'none' }}>
+          <button className="mobile-menu-btn" onClick={onToggleSidebar} aria-label="Toggle Navigation">
             <Menu size={22} />
           </button>
 

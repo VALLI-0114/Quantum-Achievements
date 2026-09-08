@@ -642,39 +642,37 @@ export const AddAchievementModal = ({
 
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="modal-body">
-            {/* Target Audience Switcher */}
-            {(activeTab === 'courses' || activeTab === 'certificates' || activeTab === 'hackathons') && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1.25rem',
-                marginBottom: '1.25rem',
-                background: audience === 'faculty' ? 'var(--secondary-light)' : 'var(--primary-light)',
-                padding: '0.75rem 1.25rem',
-                borderRadius: '10px',
-                border: `1px solid ${audience === 'faculty' ? 'var(--secondary-border)' : 'var(--primary-border)'}`
-              }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>Target Section:</span>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', fontSize: '0.88rem', fontWeight: audience === 'faculty' ? 700 : 500 }}>
-                  <input
-                    type="radio"
-                    name="targetAudience"
-                    checked={audience === 'faculty'}
-                    onChange={() => setAudience('faculty')}
-                  />
-                  Faculty Achievements
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', fontSize: '0.88rem', fontWeight: audience === 'students' ? 700 : 500 }}>
-                  <input
-                    type="radio"
-                    name="targetAudience"
-                    checked={audience === 'students'}
-                    onChange={() => setAudience('students')}
-                  />
-                  Student Achievements
-                </label>
-              </div>
-            )}
+            {/* Target Audience Switcher (Visible on all categories) */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1.25rem',
+              marginBottom: '1.25rem',
+              background: audience === 'faculty' ? 'var(--secondary-light)' : 'var(--primary-light)',
+              padding: '0.75rem 1.25rem',
+              borderRadius: '10px',
+              border: `1px solid ${audience === 'faculty' ? 'var(--secondary-border)' : 'var(--primary-border)'}`
+            }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>Target Section:</span>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', fontSize: '0.88rem', fontWeight: audience === 'faculty' ? 700 : 500 }}>
+                <input
+                  type="radio"
+                  name="targetAudience"
+                  checked={audience === 'faculty'}
+                  onChange={() => setAudience('faculty')}
+                />
+                Faculty Achievements
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', fontSize: '0.88rem', fontWeight: audience === 'students' ? 700 : 500 }}>
+                <input
+                  type="radio"
+                  name="targetAudience"
+                  checked={audience === 'students'}
+                  onChange={() => setAudience('students')}
+                />
+                Student Achievements
+              </label>
+            </div>
 
             {/* TAB 1: COURSES FORM */}
             {activeTab === 'courses' && (

@@ -11,8 +11,12 @@ export const StudentProjects = ({ onOpenProfile, onAddProject }) => {
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
   const filteredProjects = projects.filter(p => {
+    // Exclude projects explicitly targeted for faculty
+    if (p.targetAudience === 'faculty') return false;
+
     const isStudentProject = p.targetAudience === 'students' || p.targetAudience === 'student' ||
-      (p.studentsInvolved && p.studentsInvolved.length > 0);
+      (!p.targetAudience && p.studentsInvolved && p.studentsInvolved.length > 0) ||
+      (!p.targetAudience && (!p.facultyInvolved || p.facultyInvolved.length === 0));
 
     if (!isStudentProject) return false;
 

@@ -11,8 +11,12 @@ export const StudentHackathons = ({ onOpenProfile, onAddHackathon }) => {
   const selectedHackathon = hackathons.find(h => h.id === selectedHackathonId);
 
   const filteredHackathons = hackathons.filter(h => {
+    // Exclude hackathons explicitly targeted for faculty
+    if (h.targetAudience === 'faculty') return false;
+
     const isStudentHackathon = h.targetAudience === 'students' || h.targetAudience === 'student' ||
-      (h.studentParticipants && h.studentParticipants.length > 0);
+      (!h.targetAudience && h.studentParticipants && h.studentParticipants.length > 0) ||
+      (!h.targetAudience && (!h.facultyParticipants || h.facultyParticipants.length === 0));
 
     if (!isStudentHackathon) return false;
 

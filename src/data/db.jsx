@@ -25,6 +25,15 @@ const DEFAULT_DATA = {
 
 const CACHE_KEY = 'qhub_quantum_db_offline_v2';
 
+const sanitizeProjectsList = (list) => {
+  return (Array.isArray(list) ? list : []).map(p => {
+    if (p && p.title && (p.title.toLowerCase().includes('virtual lab') || p.title.toLowerCase().includes('vlms'))) {
+      return { ...p, targetAudience: 'students' };
+    }
+    return p;
+  });
+};
+
 const loadCachedData = () => {
   try {
     const raw = typeof window !== 'undefined' ? localStorage.getItem(CACHE_KEY) : null;
@@ -36,7 +45,7 @@ const loadCachedData = () => {
           students: Array.isArray(parsed.students) ? parsed.students : (INITIAL_STUDENTS || []),
           courses: Array.isArray(parsed.courses) ? parsed.courses : (INITIAL_COURSES || []),
           certificates: Array.isArray(parsed.certificates) ? parsed.certificates : (INITIAL_CERTIFICATES || []),
-          projects: Array.isArray(parsed.projects) ? parsed.projects : (INITIAL_PROJECTS || []),
+          projects: sanitizeProjectsList(parsed.projects || INITIAL_PROJECTS || []),
           researchPapers: Array.isArray(parsed.researchPapers) ? parsed.researchPapers : (INITIAL_RESEARCH_PAPERS || []),
           hackathons: Array.isArray(parsed.hackathons) ? parsed.hackathons : (INITIAL_HACKATHONS || [])
         };
@@ -365,8 +374,8 @@ export const QuantumDBProvider = ({ children }) => {
         const stuProjRows = [];
 
         stateToSave.projects.forEach(p => {
-          const isFaculty = p.targetAudience === 'faculty' || (p.facultyInvolved && p.facultyInvolved.length > 0) || (!p.targetAudience && (!p.studentsInvolved || p.studentsInvolved.length === 0));
-          const isStudent = p.targetAudience === 'students' || p.targetAudience === 'student' || (p.studentsInvolved && p.studentsInvolved.length > 0);
+          const isFaculty = p.targetAudience === 'faculty' || (!p.targetAudience && p.facultyInvolved && p.facultyInvolved.length > 0 && (!p.studentsInvolved || p.studentsInvolved.length === 0));
+          const isStudent = p.targetAudience === 'students' || p.targetAudience === 'student' || (!p.targetAudience && p.studentsInvolved && p.studentsInvolved.length > 0);
 
           if (isFaculty) {
             const facLead = (p.facultyInvolved || [])[0] || {};
@@ -411,8 +420,8 @@ export const QuantumDBProvider = ({ children }) => {
         const stuPaperRows = [];
 
         stateToSave.researchPapers.forEach(rp => {
-          const isFaculty = rp.targetAudience === 'faculty' || (rp.facultyAuthors && rp.facultyAuthors.length > 0) || (!rp.targetAudience && (!rp.studentAuthors || rp.studentAuthors.length === 0));
-          const isStudent = rp.targetAudience === 'students' || rp.targetAudience === 'student' || (rp.studentAuthors && rp.studentAuthors.length > 0);
+          const isFaculty = rp.targetAudience === 'faculty' || (!rp.targetAudience && rp.facultyAuthors && rp.facultyAuthors.length > 0 && (!rp.studentAuthors || rp.studentAuthors.length === 0));
+          const isStudent = rp.targetAudience === 'students' || rp.targetAudience === 'student' || (!rp.targetAudience && rp.studentAuthors && rp.studentAuthors.length > 0);
 
           if (isFaculty) {
             facPaperRows.push({
@@ -455,8 +464,8 @@ export const QuantumDBProvider = ({ children }) => {
         const stuHckRows = [];
 
         stateToSave.hackathons.forEach(h => {
-          const isFaculty = h.targetAudience === 'faculty' || (h.facultyParticipants && h.facultyParticipants.length > 0) || (!h.targetAudience && (!h.studentParticipants || h.studentParticipants.length === 0));
-          const isStudent = h.targetAudience === 'students' || h.targetAudience === 'student' || (h.studentParticipants && h.studentParticipants.length > 0);
+          const isFaculty = h.targetAudience === 'faculty' || (!h.targetAudience && h.facultyParticipants && h.facultyParticipants.length > 0 && (!h.studentParticipants || h.studentParticipants.length === 0));
+          const isStudent = h.targetAudience === 'students' || h.targetAudience === 'student' || (!h.targetAudience && h.studentParticipants && h.studentParticipants.length > 0);
 
           if (isFaculty) {
             const facP = (h.facultyParticipants || [])[0] || {};

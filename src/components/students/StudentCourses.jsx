@@ -14,9 +14,15 @@ export const StudentCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }
   const selectedCourse = courses.find(c => c.id === selectedCourseId);
 
   const filteredCourses = courses.filter(c => {
+    // Exclude courses explicitly targeted for faculty
+    if (c.targetAudience === 'faculty') return false;
+
     const isStudentCourse = c.targetAudience === 'students' || c.targetAudience === 'student' ||
-      (c.studentCompletions && c.studentCompletions.length > 0) ||
-      (c.studentEnrolled && c.studentEnrolled.length > 0);
+      (!c.targetAudience && (
+        (c.studentCompletions && c.studentCompletions.length > 0) ||
+        (c.studentEnrolled && c.studentEnrolled.length > 0) ||
+        (!c.facultyCompletions || c.facultyCompletions.length === 0)
+      ));
 
     if (!isStudentCourse) return false;
 

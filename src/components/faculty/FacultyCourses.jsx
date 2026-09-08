@@ -16,10 +16,15 @@ export const FacultyCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }
 
   // Filter courses by search query and faculty relevance
   const filteredCourses = courses.filter(c => {
+    // Exclude courses explicitly targeted for students
+    if (c.targetAudience === 'students' || c.targetAudience === 'student') return false;
+
     const isFacultyCourse = c.targetAudience === 'faculty' ||
-      (c.facultyCompletions && c.facultyCompletions.length > 0) ||
-      (c.facultyEnrolled && c.facultyEnrolled.length > 0) ||
-      (!c.targetAudience && (!c.studentCompletions || c.studentCompletions.length === 0));
+      (!c.targetAudience && (
+        (c.facultyCompletions && c.facultyCompletions.length > 0) ||
+        (c.facultyEnrolled && c.facultyEnrolled.length > 0) ||
+        (!c.studentCompletions || c.studentCompletions.length === 0)
+      ));
 
     if (!isFacultyCourse) return false;
 

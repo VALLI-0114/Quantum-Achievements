@@ -11,8 +11,11 @@ export const FacultyPapers = ({ onOpenProfile, onAddPaper }) => {
   const selectedPaper = researchPapers.find(p => p.id === selectedPaperId);
 
   const filteredPapers = researchPapers.filter(p => {
+    // Exclude research papers explicitly targeted for students
+    if (p.targetAudience === 'students' || p.targetAudience === 'student') return false;
+
     const isFacultyPaper = p.targetAudience === 'faculty' ||
-      (p.facultyAuthors && p.facultyAuthors.length > 0) ||
+      (!p.targetAudience && p.facultyAuthors && p.facultyAuthors.length > 0 && (!p.studentAuthors || p.studentAuthors.length === 0)) ||
       (!p.targetAudience && (!p.studentAuthors || p.studentAuthors.length === 0));
 
     if (!isFacultyPaper) return false;

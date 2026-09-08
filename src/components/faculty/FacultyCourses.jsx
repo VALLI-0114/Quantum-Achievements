@@ -14,15 +14,22 @@ export const FacultyCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }
   // Selected Course
   const selectedCourse = courses.find(c => c.id === selectedCourseId);
 
-  // Filter courses by search query
+  // Filter courses by search query and faculty relevance
   const filteredCourses = courses.filter(c => {
+    const isFacultyCourse = c.targetAudience === 'faculty' ||
+      (c.facultyCompletions && c.facultyCompletions.length > 0) ||
+      (c.facultyEnrolled && c.facultyEnrolled.length > 0) ||
+      (!c.targetAudience && (!c.studentCompletions || c.studentCompletions.length === 0));
+
+    if (!isFacultyCourse) return false;
+
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
     return (
       c.name.toLowerCase().includes(q) ||
       c.code.toLowerCase().includes(q) ||
       c.provider.toLowerCase().includes(q) ||
-      c.category.toLowerCase().includes(q)
+      (c.category && c.category.toLowerCase().includes(q))
     );
   });
 

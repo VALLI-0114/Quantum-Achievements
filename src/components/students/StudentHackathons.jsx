@@ -11,6 +11,11 @@ export const StudentHackathons = ({ onOpenProfile, onAddHackathon }) => {
   const selectedHackathon = hackathons.find(h => h.id === selectedHackathonId);
 
   const filteredHackathons = hackathons.filter(h => {
+    const isStudentHackathon = h.targetAudience === 'students' || h.targetAudience === 'student' ||
+      (h.studentParticipants && h.studentParticipants.length > 0);
+
+    if (!isStudentHackathon) return false;
+
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
     return (

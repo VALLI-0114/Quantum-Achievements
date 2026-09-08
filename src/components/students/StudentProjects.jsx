@@ -11,6 +11,11 @@ export const StudentProjects = ({ onOpenProfile, onAddProject }) => {
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
   const filteredProjects = projects.filter(p => {
+    const isStudentProject = p.targetAudience === 'students' || p.targetAudience === 'student' ||
+      (p.studentsInvolved && p.studentsInvolved.length > 0);
+
+    if (!isStudentProject) return false;
+
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
     return (

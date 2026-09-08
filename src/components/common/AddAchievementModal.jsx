@@ -300,6 +300,7 @@ export const AddAchievementModal = ({
         category: courseForm.category,
         description: courseForm.description,
         uploadedFile: courseForm.uploadedFile,
+        targetAudience: audience,
         facultyCompletions: audience === 'faculty' && completerId ? [{
           facultyId: completerId,
           facultyName: courseForm.completerName,
@@ -341,6 +342,7 @@ export const AddAchievementModal = ({
         code: certForm.code,
         verificationUrl: certForm.verificationUrl,
         uploadedFile: certForm.uploadedFile,
+        targetAudience: audience,
         facultyRecipients: audience === 'faculty' && recipientId ? [{
           facultyId: recipientId,
           facultyName: certForm.recipientName,
@@ -421,6 +423,7 @@ export const AddAchievementModal = ({
         status: projectForm.status,
         githubUrl: projectForm.githubUrl,
         uploadedFile: projectForm.uploadedFile,
+        targetAudience: audience,
         facultyInvolved: facInvolved,
         studentsInvolved: stuInvolved
       }, newFacultyList, newStudentsList);
@@ -447,6 +450,7 @@ export const AddAchievementModal = ({
         date: paperForm.date,
         researchArea: paperForm.researchArea,
         abstract: paperForm.abstract,
+        targetAudience: audience,
         facultyAuthors: facAuthors,
         studentAuthors: stuAuthors
       }, newFacultyList, newStudentsList);
@@ -520,6 +524,7 @@ export const AddAchievementModal = ({
         organizer: hackathonForm.organizer,
         edition: hackathonForm.edition,
         date: hackathonForm.date,
+        targetAudience: audience,
         facultyParticipants: facParticipants,
         studentParticipants: stuParticipants
       }, newFacultyList, newStudentsList);

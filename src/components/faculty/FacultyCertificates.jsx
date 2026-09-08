@@ -14,6 +14,12 @@ export const FacultyCertificates = ({ onOpenCertificate, onOpenProfile, onAddCer
   const selectedCert = certificates.find(c => c.id === selectedCertId);
 
   const filteredCerts = certificates.filter(c => {
+    const isFacultyCert = c.targetAudience === 'faculty' ||
+      (c.facultyRecipients && c.facultyRecipients.length > 0) ||
+      (!c.targetAudience && (!c.studentRecipients || c.studentRecipients.length === 0));
+
+    if (!isFacultyCert) return false;
+
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
     return c.title.toLowerCase().includes(q) || c.issuer.toLowerCase().includes(q);

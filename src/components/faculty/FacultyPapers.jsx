@@ -11,12 +11,18 @@ export const FacultyPapers = ({ onOpenProfile, onAddPaper }) => {
   const selectedPaper = researchPapers.find(p => p.id === selectedPaperId);
 
   const filteredPapers = researchPapers.filter(p => {
+    const isFacultyPaper = p.targetAudience === 'faculty' ||
+      (p.facultyAuthors && p.facultyAuthors.length > 0) ||
+      (!p.targetAudience && (!p.studentAuthors || p.studentAuthors.length === 0));
+
+    if (!isFacultyPaper) return false;
+
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
     return (
       p.title.toLowerCase().includes(q) ||
-      p.venue.toLowerCase().includes(q) ||
-      p.researchArea.toLowerCase().includes(q)
+      (p.venue && p.venue.toLowerCase().includes(q)) ||
+      (p.researchArea && p.researchArea.toLowerCase().includes(q))
     );
   });
 

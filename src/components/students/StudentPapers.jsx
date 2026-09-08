@@ -11,12 +11,17 @@ export const StudentPapers = ({ onOpenProfile, onAddPaper }) => {
   const selectedPaper = researchPapers.find(p => p.id === selectedPaperId);
 
   const filteredPapers = researchPapers.filter(p => {
+    const isStudentPaper = p.targetAudience === 'students' || p.targetAudience === 'student' ||
+      (p.studentAuthors && p.studentAuthors.length > 0);
+
+    if (!isStudentPaper) return false;
+
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
     return (
       p.title.toLowerCase().includes(q) ||
-      p.venue.toLowerCase().includes(q) ||
-      p.researchArea.toLowerCase().includes(q)
+      (p.venue && p.venue.toLowerCase().includes(q)) ||
+      (p.researchArea && p.researchArea.toLowerCase().includes(q))
     );
   });
 

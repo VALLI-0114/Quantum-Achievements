@@ -14,13 +14,19 @@ export const StudentCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }
   const selectedCourse = courses.find(c => c.id === selectedCourseId);
 
   const filteredCourses = courses.filter(c => {
+    const isStudentCourse = c.targetAudience === 'students' || c.targetAudience === 'student' ||
+      (c.studentCompletions && c.studentCompletions.length > 0) ||
+      (c.studentEnrolled && c.studentEnrolled.length > 0);
+
+    if (!isStudentCourse) return false;
+
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
     return (
       c.name.toLowerCase().includes(q) ||
       c.code.toLowerCase().includes(q) ||
       c.provider.toLowerCase().includes(q) ||
-      c.category.toLowerCase().includes(q)
+      (c.category && c.category.toLowerCase().includes(q))
     );
   });
 

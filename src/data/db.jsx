@@ -215,6 +215,7 @@ export const QuantumDBProvider = ({ children }) => {
           provider: c.provider,
           category: c.category,
           description: c.description,
+          targetAudience: c.target_audience || c.targetAudience || ((c.faculty_completions?.length > 0 || c.faculty_enrolled?.length > 0) ? 'faculty' : (c.student_completions?.length > 0 || c.student_enrolled?.length > 0) ? 'students' : 'faculty'),
           facultyCompletions: c.faculty_completions || c.facultyCompletions || [],
           facultyEnrolled: c.faculty_enrolled || c.facultyEnrolled || [],
           studentCompletions: c.student_completions || c.studentCompletions || [],
@@ -229,6 +230,7 @@ export const QuantumDBProvider = ({ children }) => {
           issuer: c.issuer,
           code: c.code,
           verificationUrl: c.verification_url || c.verificationUrl,
+          targetAudience: c.target_audience || c.targetAudience || (c.faculty_recipients?.length > 0 ? 'faculty' : c.student_recipients?.length > 0 ? 'students' : 'faculty'),
           facultyRecipients: c.faculty_recipients || c.facultyRecipients || [],
           studentRecipients: c.student_recipients || c.studentRecipients || []
         }));
@@ -243,6 +245,7 @@ export const QuantumDBProvider = ({ children }) => {
           description: p.description,
           status: p.status,
           githubUrl: p.github_url || p.githubUrl,
+          targetAudience: p.target_audience || p.targetAudience || (p.faculty_involved?.length > 0 ? 'faculty' : p.students_involved?.length > 0 ? 'students' : 'faculty'),
           facultyInvolved: p.faculty_involved || p.facultyInvolved || [],
           studentsInvolved: p.students_involved || p.studentsInvolved || []
         }));
@@ -258,6 +261,7 @@ export const QuantumDBProvider = ({ children }) => {
           abstract: rp.abstract,
           citations: rp.citations || 0,
           date: rp.date,
+          targetAudience: rp.target_audience || rp.targetAudience || (rp.faculty_authors?.length > 0 ? 'faculty' : rp.student_authors?.length > 0 ? 'students' : 'faculty'),
           facultyAuthors: rp.faculty_authors || rp.facultyAuthors || [],
           studentAuthors: rp.student_authors || rp.studentAuthors || []
         }));
@@ -270,6 +274,7 @@ export const QuantumDBProvider = ({ children }) => {
           organizer: h.organizer,
           edition: h.edition,
           date: h.date,
+          targetAudience: h.target_audience || h.targetAudience || (h.faculty_participants?.length > 0 ? 'faculty' : h.student_participants?.length > 0 ? 'students' : 'faculty'),
           facultyParticipants: h.faculty_participants || h.facultyParticipants || [],
           studentParticipants: h.student_participants || h.studentParticipants || []
         }));

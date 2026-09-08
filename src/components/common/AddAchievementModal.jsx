@@ -530,6 +530,34 @@ export const AddAchievementModal = ({
       }, newFacultyList, newStudentsList);
     }
 
+    // Reset forms for clean next entry
+    setCourseForm({
+      code: 'QC-205',
+      name: '',
+      provider: 'IBM Quantum Network & Q-HUB',
+      category: 'Quantum Algorithms',
+      description: '',
+      completerName: '',
+      completerDept: 'Computer Science & Engineering',
+      completerId: '',
+      completionDate: new Date().toISOString().slice(0, 10),
+      grade: 'Distinction / 98%',
+      uploadedFile: null
+    });
+    setCertForm({
+      title: '',
+      issuer: 'IBM Quantum & Q-HUB',
+      code: 'QISKIT-PRO-2026',
+      verificationUrl: 'https://www.credly.com',
+      recipientName: '',
+      recipientDept: 'Computer Science & Engineering',
+      recipientId: '',
+      issueDate: new Date().toISOString().slice(0, 10),
+      credentialId: `QHUB-CERT-${Math.floor(100000 + Math.random() * 900000)}`,
+      score: 'Mastery / 95%',
+      uploadedFile: null
+    });
+
     onClose();
   };
 

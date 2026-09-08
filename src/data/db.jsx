@@ -877,47 +877,135 @@ export const QuantumDBProvider = ({ children }) => {
         });
       });
 
-      // If dedicated multi-table data exists, use it!
+      // Build unified state prioritizing rich main_state and merging any external relational rows
+      if (mainStateRow && mainStateRow.data) {
+        const cloudData = mainStateRow.data;
+
+        // 1. Restore Courses & Attach Documents
+        const baseCourses = (Array.isArray(cloudData.courses) ? cloudData.courses : []).map(c => {
+          const file = getDoc(c.id, c.uploadedFile?.name) || c.uploadedFile || null;
+          return {
+            ...c,
+            uploadedFile: file,
+            facultyCompletions: (c.facultyCompletions || []).map(fc => ({
+              ...fc,
+              uploadedFile: getDoc(fc.certificateId, fc.facultyId, `${c.id}_${fc.facultyId}`) || fc.uploadedFile || file
+            })),
+            studentCompletions: (c.studentCompletions || []).map(sc => ({
+              ...sc,
+              uploadedFile: getDoc(sc.certificateId, sc.studentId, `${c.id}_${sc.studentId}`) || sc.uploadedFile || file
+            }))
+          };
+        });
+
+        // Merge any dedicated courses not in base
+        const courseIdSet = new Set(baseCourses.map(c => String(c.id).toLowerCase()));
+        loadedCourses.forEach(lc => {
+          if (!courseIdSet.has(String(lc.id).toLowerCase())) {
+            baseCourses.push(lc);
+            courseIdSet.add(String(lc.id).toLowerCase());
+          }
+        });
+
+        // 2. Restore Certificates & Attach Documents
+        const baseCerts = (Array.isArray(cloudData.certificates) ? cloudData.certificates : []).map(cert => {
+          const file = getDoc(cert.id, cert.uploadedFile?.name) || cert.uploadedFile || null;
+          return {
+            ...cert,
+            uploadedFile: file,
+            facultyRecipients: (cert.facultyRecipients || []).map(fr => ({
+              ...fr,
+              uploadedFile: getDoc(fr.credentialId, fr.facultyId, `${cert.id}_${fr.facultyId}`) || fr.uploadedFile || file
+            })),
+            studentRecipients: (cert.studentRecipients || []).map(sr => ({
+              ...sr,
+              uploadedFile: getDoc(sr.credentialId, sr.studentId, `${cert.id}_${sr.studentId}`) || sr.uploadedFile || file
+            }))
+          };
+        });
+
+        const certIdSet = new Set(baseCerts.map(c => String(c.id).toLowerCase()));
+        loadedCertificates.forEach(lc => {
+          if (!certIdSet.has(String(lc.id).toLowerCase())) {
+            baseCerts.push(lc);
+            certIdSet.add(String(lc.id).toLowerCase());
+          }
+        });
+
+        // 3. Restore Projects
+        const baseProjects = Array.isArray(cloudData.projects) ? cloudData.projects : [];
+        const projIdSet = new Set(baseProjects.map(p => String(p.id).toLowerCase()));
+        loadedProjects.forEach(lp => {
+          if (!projIdSet.has(String(lp.id).toLowerCase())) {
+            baseProjects.push(lp);
+            projIdSet.add(String(lp.id).toLowerCase());
+          }
+        });
+
+        // 4. Restore Papers
+        const basePapers = Array.isArray(cloudData.researchPapers) ? cloudData.researchPapers : [];
+        const paperIdSet = new Set(basePapers.map(p => String(p.id).toLowerCase()));
+        loadedPapers.forEach(lp => {
+          if (!paperIdSet.has(String(lp.id).toLowerCase())) {
+            basePapers.push(lp);
+            paperIdSet.add(String(lp.id).toLowerCase());
+          }
+        });
+
+        // 5. Restore Hackathons
+        const baseHackathons = Array.isArray(cloudData.hackathons) ? cloudData.hackathons : [];
+        const hckIdSet = new Set(baseHackathons.map(h => String(h.id).toLowerCase()));
+        loadedHackathons.forEach(lh => {
+          if (!hckIdSet.has(String(lh.id).toLowerCase())) {
+            baseHackathons.push(lh);
+            hckIdSet.add(String(lh.id).toLowerCase());
+          }
+        });
+
+        // 6. Restore Faculty & Students
+        const baseFaculty = Array.isArray(cloudData.faculty) && cloudData.faculty.length > 0 ? cloudData.faculty : loadedFaculty;
+        const baseStudents = Array.isArray(cloudData.students) && cloudData.students.length > 0 ? cloudData.students : loadedStudents;
+
+        const assembled = {
+          faculty: baseFaculty.length > 0 ? baseFaculty : (INITIAL_FACULTY || []),
+          students: baseStudents.length > 0 ? baseStudents : (INITIAL_STUDENTS || []),
+          courses: baseCourses.length > 0 ? baseCourses : (INITIAL_COURSES || []),
+          certificates: baseCerts.length > 0 ? baseCerts : (INITIAL_CERTIFICATES || []),
+          projects: baseProjects.length > 0 ? baseProjects : (INITIAL_PROJECTS || []),
+          researchPapers: basePapers.length > 0 ? basePapers : (INITIAL_RESEARCH_PAPERS || []),
+          hackathons: baseHackathons.length > 0 ? baseHackathons : (INITIAL_HACKATHONS || [])
+        };
+
+        lastSyncedHash.current = getJson(assembled);
+        setData(assembled);
+        setCloudStatus('synced');
+        setLastSyncTime(mainStateRow.updated_at ? new Date(mainStateRow.updated_at) : new Date());
+        return;
+      }
+
+      // If no main_state yet, use dedicated tables or DEFAULT_DATA
       if (hasDedicatedData) {
         const assembled = {
-          faculty: loadedFaculty,
-          students: loadedStudents,
-          courses: loadedCourses,
-          certificates: loadedCertificates,
-          projects: loadedProjects,
-          researchPapers: loadedPapers,
-          hackathons: loadedHackathons
+          faculty: loadedFaculty.length > 0 ? loadedFaculty : (INITIAL_FACULTY || []),
+          students: loadedStudents.length > 0 ? loadedStudents : (INITIAL_STUDENTS || []),
+          courses: loadedCourses.length > 0 ? loadedCourses : (INITIAL_COURSES || []),
+          certificates: loadedCertificates.length > 0 ? loadedCertificates : (INITIAL_CERTIFICATES || []),
+          projects: loadedProjects.length > 0 ? loadedProjects : (INITIAL_PROJECTS || []),
+          researchPapers: loadedPapers.length > 0 ? loadedPapers : (INITIAL_RESEARCH_PAPERS || []),
+          hackathons: loadedHackathons.length > 0 ? loadedHackathons : (INITIAL_HACKATHONS || [])
         };
         lastSyncedHash.current = getJson(assembled);
         setData(assembled);
         setCloudStatus('synced');
         setLastSyncTime(new Date());
+
+        // Backfill main_state
+        persistToSupabase(assembled);
         return;
       }
 
-      // Fallback: unified quantum_portal_data
-      if (mainStateRow && mainStateRow.data) {
-        const cloudData = mainStateRow.data;
-        const assembled = {
-          faculty: Array.isArray(cloudData.faculty) ? cloudData.faculty : [],
-          students: Array.isArray(cloudData.students) ? cloudData.students : [],
-          courses: Array.isArray(cloudData.courses) ? cloudData.courses : [],
-          certificates: Array.isArray(cloudData.certificates) ? cloudData.certificates : [],
-          projects: Array.isArray(cloudData.projects) ? cloudData.projects : [],
-          researchPapers: Array.isArray(cloudData.researchPapers) ? cloudData.researchPapers : [],
-          hackathons: Array.isArray(cloudData.hackathons) ? cloudData.hackathons : []
-        };
-        lastSyncedHash.current = getJson(assembled);
-        setData(assembled);
-        setCloudStatus('synced');
-        setLastSyncTime(mainStateRow.updated_at ? new Date(mainStateRow.updated_at) : new Date());
-
-        // Backfill dedicated separate tables
-        persistToSupabase(assembled);
-      } else {
-        setData(DEFAULT_DATA);
-        setCloudStatus('synced');
-      }
+      setData(DEFAULT_DATA);
+      setCloudStatus('synced');
     } catch (e) {
       console.error("Supabase initial load error:", e);
       setCloudStatus('offline');

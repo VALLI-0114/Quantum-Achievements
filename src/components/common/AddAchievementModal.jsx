@@ -327,6 +327,8 @@ export const AddAchievementModal = ({
         }
       }
 
+      const effectiveCredentialId = certForm.credentialId?.trim() || `QHUB-CERT-${Math.floor(100000 + Math.random() * 900000)}`;
+
       const newCert = {
         id: `CERT-${Date.now().toString().slice(-4)}`,
         title: certForm.title,
@@ -338,16 +340,16 @@ export const AddAchievementModal = ({
           facultyId: recipientId,
           facultyName: certForm.recipientName,
           issueDate: certForm.issueDate,
-          credentialId: certForm.credentialId,
-          score: certForm.score,
+          credentialId: effectiveCredentialId,
+          score: certForm.score || 'Mastery / 95%',
           uploadedFile: certForm.uploadedFile
         }] : [],
         studentRecipients: audience === 'students' && recipientId ? [{
           studentId: recipientId,
           studentName: certForm.recipientName,
           issueDate: certForm.issueDate,
-          credentialId: certForm.credentialId,
-          score: certForm.score,
+          credentialId: effectiveCredentialId,
+          score: certForm.score || 'Mastery / 95%',
           uploadedFile: certForm.uploadedFile
         }] : []
       };
@@ -838,13 +840,13 @@ export const AddAchievementModal = ({
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Certificate Code / Credential ID</label>
+                    <label className="form-label">Certificate Code / Credential ID (Optional)</label>
                     <input
                       type="text"
                       className="form-input"
                       value={certForm.credentialId}
                       onChange={(e) => setCertForm({ ...certForm, credentialId: e.target.value })}
-                      required
+                      placeholder="e.g. QHUB-CERT-993012"
                     />
                   </div>
                 </div>

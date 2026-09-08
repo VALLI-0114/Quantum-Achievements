@@ -115,19 +115,22 @@ export const AddParticipantModal = ({
       }
     }
 
+    const effectiveGrade = completionData.grade?.trim() || 'Completed / Verified';
+    const effectiveCertId = completionData.certificateId?.trim() || `QHUB-${isStudent ? 'STU' : 'FAC'}-${Math.floor(100000 + Math.random() * 900000)}`;
+
     // Add completion to Course or Certificate
     if (isCourse) {
       addCourseCompletion(entityId, isStudent ? 'students' : 'faculty', targetPersonId, {
         completionDate: completionData.completionDate,
-        grade: completionData.grade,
-        certificateId: completionData.certificateId,
+        grade: effectiveGrade,
+        certificateId: effectiveCertId,
         uploadedFile: completionData.uploadedFile
       });
     } else {
       addCertificateRecipient(entityId, isStudent ? 'students' : 'faculty', targetPersonId, {
         issueDate: completionData.completionDate,
-        score: completionData.grade,
-        credentialId: completionData.certificateId,
+        score: effectiveGrade,
+        credentialId: effectiveCertId,
         uploadedFile: completionData.uploadedFile
       });
     }
@@ -258,26 +261,25 @@ export const AddParticipantModal = ({
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Grade / Distinction Score</label>
+                  <label className="form-label">Grade / Distinction Score (Optional)</label>
                   <input
                     type="text"
                     className="form-input"
-                    placeholder="e.g. 98% (Distinction)"
+                    placeholder="e.g. 98% (Distinction) or Pass"
                     value={completionData.grade}
                     onChange={(e) => setCompletionData({ ...completionData, grade: e.target.value })}
-                    required
                   />
                 </div>
               </div>
 
               <div className="form-group">
-                <label className="form-label">Certificate Credential ID</label>
+                <label className="form-label">Certificate Credential ID (Optional)</label>
                 <input
                   type="text"
                   className="form-input"
+                  placeholder="e.g. QHUB-CERT-993012"
                   value={completionData.certificateId}
                   onChange={(e) => setCompletionData({ ...completionData, certificateId: e.target.value })}
-                  required
                 />
               </div>
 

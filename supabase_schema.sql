@@ -1,18 +1,32 @@
 -- ==============================================================================
 -- Q-HUB QUANTUM COMPUTING PORTAL - DEDICATED FACULTY & STUDENT SCHEMA
 -- ==============================================================================
--- Run this in your Supabase SQL Editor:
+-- Run this script in your Supabase SQL Editor:
 -- https://supabase.com/dashboard/project/lzwojngbqvsojdburrps/sql/new
 --
--- Creates completely separate tables for Faculty and Students across all categories:
--- Courses, Certificates, Projects, Research Papers, and Hackathons.
+-- This script:
+-- 1. Drops unnecessary generic tables (courses, certificates, projects, research_papers, hackathons)
+-- 2. Creates and configures ONLY the 10 dedicated Faculty & Student tables:
+--    - faculty_courses, faculty_certificates, faculty_projects, faculty_papers, faculty_hackathons
+--    - student_courses, student_certificates, student_projects, student_papers, student_hackathons
+-- 3. Enables RLS policies for public access
+-- 4. Enables Supabase Realtime broadcast on all tables
 -- ==============================================================================
 
 -- ==============================================================================
--- 1. FACULTY TABLES
+-- STEP 1: DROP UNNECESSARY GENERIC TABLES
+-- ==============================================================================
+DROP TABLE IF EXISTS public.courses CASCADE;
+DROP TABLE IF EXISTS public.certificates CASCADE;
+DROP TABLE IF EXISTS public.projects CASCADE;
+DROP TABLE IF EXISTS public.research_papers CASCADE;
+DROP TABLE IF EXISTS public.hackathons CASCADE;
+
+-- ==============================================================================
+-- STEP 2: DEDICATED FACULTY TABLES
 -- ==============================================================================
 
--- Faculty Profiles
+-- 1. Faculty Profiles
 CREATE TABLE IF NOT EXISTS public.faculty (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
@@ -23,24 +37,25 @@ CREATE TABLE IF NOT EXISTS public.faculty (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Faculty Courses
+-- 2. Faculty Courses
 CREATE TABLE IF NOT EXISTS public.faculty_courses (
     id TEXT PRIMARY KEY,
     course_code TEXT NOT NULL,
     course_name TEXT NOT NULL,
     provider TEXT NOT NULL,
-    category TEXT,
+    category TEXT DEFAULT 'Quantum Computing',
     description TEXT,
     faculty_name TEXT,
     faculty_id TEXT,
     completion_date TEXT,
-    grade TEXT,
+    grade TEXT DEFAULT 'Distinction',
     certificate_id TEXT,
     status TEXT DEFAULT 'Completed',
+    uploaded_file TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Faculty Certificates
+-- 3. Faculty Certificates
 CREATE TABLE IF NOT EXISTS public.faculty_certificates (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
@@ -50,16 +65,17 @@ CREATE TABLE IF NOT EXISTS public.faculty_certificates (
     faculty_id TEXT,
     credential_id TEXT,
     issue_date TEXT,
-    score TEXT,
+    score TEXT DEFAULT 'Distinction',
     verification_url TEXT,
+    uploaded_file TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Faculty Projects
+-- 4. Faculty Projects
 CREATE TABLE IF NOT EXISTS public.faculty_projects (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
-    domain TEXT,
+    domain TEXT DEFAULT 'Quantum Computing',
     tech_stack TEXT,
     description TEXT,
     status TEXT DEFAULT 'Active Development',
@@ -67,25 +83,27 @@ CREATE TABLE IF NOT EXISTS public.faculty_projects (
     faculty_name TEXT,
     faculty_id TEXT,
     role TEXT DEFAULT 'Principal Investigator / Research Advisor',
+    uploaded_file TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Faculty Research Papers
+-- 5. Faculty Research Papers
 CREATE TABLE IF NOT EXISTS public.faculty_papers (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
     venue TEXT,
     doi TEXT,
-    research_area TEXT,
+    research_area TEXT DEFAULT 'Quantum Computing',
     abstract TEXT,
     citations INTEGER DEFAULT 0,
     date TEXT,
     faculty_name TEXT,
     faculty_id TEXT,
+    uploaded_file TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Faculty Hackathons
+-- 6. Faculty Hackathons
 CREATE TABLE IF NOT EXISTS public.faculty_hackathons (
     id TEXT PRIMARY KEY,
     hackathon_name TEXT NOT NULL,
@@ -96,15 +114,16 @@ CREATE TABLE IF NOT EXISTS public.faculty_hackathons (
     faculty_id TEXT,
     team_name TEXT,
     project_built TEXT,
-    award TEXT,
+    award TEXT DEFAULT 'Participant',
+    uploaded_file TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- ==============================================================================
--- 2. STUDENT TABLES
+-- STEP 3: DEDICATED STUDENT TABLES
 -- ==============================================================================
 
--- Student Profiles
+-- 7. Student Profiles
 CREATE TABLE IF NOT EXISTS public.students (
     id TEXT PRIMARY KEY,
     student_id TEXT,
@@ -116,24 +135,25 @@ CREATE TABLE IF NOT EXISTS public.students (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Student Courses
+-- 8. Student Courses
 CREATE TABLE IF NOT EXISTS public.student_courses (
     id TEXT PRIMARY KEY,
     course_code TEXT NOT NULL,
     course_name TEXT NOT NULL,
     provider TEXT NOT NULL,
-    category TEXT,
+    category TEXT DEFAULT 'Quantum Computing',
     description TEXT,
     student_name TEXT,
     student_id TEXT,
     completion_date TEXT,
-    grade TEXT,
+    grade TEXT DEFAULT 'Distinction',
     certificate_id TEXT,
     status TEXT DEFAULT 'Completed',
+    uploaded_file TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Student Certificates
+-- 9. Student Certificates
 CREATE TABLE IF NOT EXISTS public.student_certificates (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
@@ -143,16 +163,17 @@ CREATE TABLE IF NOT EXISTS public.student_certificates (
     student_id TEXT,
     credential_id TEXT,
     issue_date TEXT,
-    score TEXT,
+    score TEXT DEFAULT 'Distinction',
     verification_url TEXT,
+    uploaded_file TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Student Projects
+-- 10. Student Projects
 CREATE TABLE IF NOT EXISTS public.student_projects (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
-    domain TEXT,
+    domain TEXT DEFAULT 'Quantum Computing',
     tech_stack TEXT,
     description TEXT,
     status TEXT DEFAULT 'Active Development',
@@ -160,25 +181,27 @@ CREATE TABLE IF NOT EXISTS public.student_projects (
     student_name TEXT,
     student_id TEXT,
     role TEXT DEFAULT 'Project Lead & Developer',
+    uploaded_file TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Student Research Papers
+-- 11. Student Research Papers
 CREATE TABLE IF NOT EXISTS public.student_papers (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
     venue TEXT,
     doi TEXT,
-    research_area TEXT,
+    research_area TEXT DEFAULT 'Quantum Computing',
     abstract TEXT,
     citations INTEGER DEFAULT 0,
     date TEXT,
     student_name TEXT,
     student_id TEXT,
+    uploaded_file TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Student Hackathons
+-- 12. Student Hackathons
 CREATE TABLE IF NOT EXISTS public.student_hackathons (
     id TEXT PRIMARY KEY,
     hackathon_name TEXT NOT NULL,
@@ -189,12 +212,13 @@ CREATE TABLE IF NOT EXISTS public.student_hackathons (
     student_id TEXT,
     team_name TEXT,
     project_built TEXT,
-    award TEXT,
+    award TEXT DEFAULT 'Participant',
+    uploaded_file TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- ==============================================================================
--- 3. UNIFIED REALTIME SYNC TABLE
+-- STEP 4: REALTIME STATE SYNC TABLE
 -- ==============================================================================
 CREATE TABLE IF NOT EXISTS public.quantum_portal_data (
     id TEXT PRIMARY KEY,
@@ -203,7 +227,7 @@ CREATE TABLE IF NOT EXISTS public.quantum_portal_data (
 );
 
 -- ==============================================================================
--- 4. ENABLE ROW LEVEL SECURITY (RLS) ON ALL TABLES
+-- STEP 5: ENABLE ROW LEVEL SECURITY (RLS) & OPEN POLICIES
 -- ==============================================================================
 ALTER TABLE public.faculty ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.faculty_courses ENABLE ROW LEVEL SECURITY;
@@ -221,11 +245,7 @@ ALTER TABLE public.student_hackathons ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE public.quantum_portal_data ENABLE ROW LEVEL SECURITY;
 
--- ==============================================================================
--- 5. CREATE PUBLIC ACCESS POLICIES (ALLOW ALL FOR APP)
--- ==============================================================================
-
--- Faculty
+-- Drop and recreate full access policies
 DROP POLICY IF EXISTS "Allow public all on faculty" ON public.faculty;
 CREATE POLICY "Allow public all on faculty" ON public.faculty FOR ALL USING (true) WITH CHECK (true);
 
@@ -244,7 +264,6 @@ CREATE POLICY "Allow public all on faculty_papers" ON public.faculty_papers FOR 
 DROP POLICY IF EXISTS "Allow public all on faculty_hackathons" ON public.faculty_hackathons;
 CREATE POLICY "Allow public all on faculty_hackathons" ON public.faculty_hackathons FOR ALL USING (true) WITH CHECK (true);
 
--- Students
 DROP POLICY IF EXISTS "Allow public all on students" ON public.students;
 CREATE POLICY "Allow public all on students" ON public.students FOR ALL USING (true) WITH CHECK (true);
 
@@ -263,31 +282,29 @@ CREATE POLICY "Allow public all on student_papers" ON public.student_papers FOR 
 DROP POLICY IF EXISTS "Allow public all on student_hackathons" ON public.student_hackathons;
 CREATE POLICY "Allow public all on student_hackathons" ON public.student_hackathons FOR ALL USING (true) WITH CHECK (true);
 
--- Unified Sync
 DROP POLICY IF EXISTS "Allow public all on quantum_portal_data" ON public.quantum_portal_data;
 CREATE POLICY "Allow public all on quantum_portal_data" ON public.quantum_portal_data FOR ALL USING (true) WITH CHECK (true);
 
 -- ==============================================================================
--- 6. REALTIME BROADCASTING
+-- STEP 6: ENABLE SUPABASE REALTIME REPLICATION
 -- ==============================================================================
 DO $$
 BEGIN
-    BEGIN
-        ALTER PUBLICATION supabase_realtime ADD TABLE 
-            public.faculty,
-            public.faculty_courses,
-            public.faculty_certificates,
-            public.faculty_projects,
-            public.faculty_papers,
-            public.faculty_hackathons,
-            public.students,
-            public.student_courses,
-            public.student_certificates,
-            public.student_projects,
-            public.student_papers,
-            public.student_hackathons,
-            public.quantum_portal_data;
-    EXCEPTION WHEN duplicate_object THEN
-        NULL;
-    END;
+    ALTER PUBLICATION supabase_realtime ADD TABLE 
+        public.faculty,
+        public.faculty_courses,
+        public.faculty_certificates,
+        public.faculty_projects,
+        public.faculty_papers,
+        public.faculty_hackathons,
+        public.students,
+        public.student_courses,
+        public.student_certificates,
+        public.student_projects,
+        public.student_papers,
+        public.student_hackathons,
+        public.quantum_portal_data;
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+    WHEN undefined_object THEN NULL;
 END $$;

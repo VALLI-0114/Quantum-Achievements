@@ -512,9 +512,9 @@ export const AddAchievementModal = ({
             facParticipants.push({
               facultyId: fId,
               facultyName: hackathonForm.leadName.trim(),
-              teamName: hackathonForm.teamName || 'Faculty Q-Team',
-              projectBuilt: hackathonForm.projectBuilt || 'Quantum Algorithm Solution',
-              award: hackathonForm.award,
+              teamName: hackathonForm.teamName?.trim() || '—',
+              projectBuilt: hackathonForm.projectBuilt?.trim() || '—',
+              award: hackathonForm.award?.trim() || 'Participant',
               rank: 'Winner'
             });
           }
@@ -524,9 +524,9 @@ export const AddAchievementModal = ({
             stuParticipants.push({
               studentId: sId,
               studentName: hackathonForm.leadName.trim(),
-              teamName: hackathonForm.teamName || 'Student Q-Team',
-              projectBuilt: hackathonForm.projectBuilt || 'Quantum Algorithm Solution',
-              award: hackathonForm.award,
+              teamName: hackathonForm.teamName?.trim() || '—',
+              projectBuilt: hackathonForm.projectBuilt?.trim() || '—',
+              award: hackathonForm.award?.trim() || 'Participant',
               rank: 'Winner'
             });
           }
@@ -542,9 +542,9 @@ export const AddAchievementModal = ({
               facParticipants.push({
                 facultyId: fId,
                 facultyName: t.name.trim(),
-                teamName: hackathonForm.teamName || 'Faculty Q-Team',
-                projectBuilt: hackathonForm.projectBuilt || 'Quantum Algorithm Solution',
-                award: hackathonForm.award,
+                teamName: hackathonForm.teamName?.trim() || '—',
+                projectBuilt: hackathonForm.projectBuilt?.trim() || '—',
+                award: hackathonForm.award?.trim() || 'Participant',
                 rank: 'Winner'
               });
             }
@@ -554,9 +554,9 @@ export const AddAchievementModal = ({
               stuParticipants.push({
                 studentId: sId,
                 studentName: t.name.trim(),
-                teamName: hackathonForm.teamName || 'Student Q-Team',
-                projectBuilt: hackathonForm.projectBuilt || 'Quantum Algorithm Solution',
-                award: hackathonForm.award,
+                teamName: hackathonForm.teamName?.trim() || '—',
+                projectBuilt: hackathonForm.projectBuilt?.trim() || '—',
+                award: hackathonForm.award?.trim() || 'Participant',
                 rank: 'Winner'
               });
             }
@@ -1754,14 +1754,15 @@ export const AddAchievementModal = ({
 
                 <div className="form-grid-2">
                   <div className="form-group">
-                    <label className="form-label">Team Name</label>
+                    <label className="form-label">
+                      Team Name <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: '0.8rem' }}>(Optional)</span>
+                    </label>
                     <input
                       type="text"
                       className="form-input"
                       value={hackathonForm.teamName}
                       onChange={(e) => setHackathonForm({ ...hackathonForm, teamName: e.target.value })}
-                      placeholder="e.g. Q-Innovators Alpha"
-                      required
+                      placeholder="e.g. Q-Innovators Alpha (Optional)"
                     />
                   </div>
                   <div className="form-group">
@@ -1772,20 +1773,20 @@ export const AddAchievementModal = ({
                       value={hackathonForm.award}
                       onChange={(e) => setHackathonForm({ ...hackathonForm, award: e.target.value })}
                       placeholder="e.g. 🏆 1st Place - Quantum Track"
-                      required
                     />
                   </div>
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Project Built / Solution Description</label>
+                  <label className="form-label">
+                    Project Built / Solution Description <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: '0.8rem' }}>(Optional)</span>
+                  </label>
                   <input
                     type="text"
                     className="form-input"
                     value={hackathonForm.projectBuilt}
                     onChange={(e) => setHackathonForm({ ...hackathonForm, projectBuilt: e.target.value })}
-                    placeholder="e.g. Real-Time Quantum Error Mitigation VQE Pipeline"
-                    required
+                    placeholder="e.g. Real-Time Quantum Error Mitigation VQE Pipeline (Optional)"
                   />
                 </div>
 

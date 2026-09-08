@@ -13,10 +13,14 @@
     "jspdf": "^4.2.1",
     "lucide-react": "^1.41.0",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "shaders": "^3.2.467"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^6.1.1",
+    "autoprefixer": "^10.5.5",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^3.4.19",
     "vite": "^8.2.2"
   }
 }

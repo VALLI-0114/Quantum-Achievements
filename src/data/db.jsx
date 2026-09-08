@@ -23,8 +23,44 @@ const DEFAULT_DATA = {
   hackathons: INITIAL_HACKATHONS || []
 };
 
+const CACHE_KEY = 'qhub_quantum_db_offline_v2';
+
+const loadCachedData = () => {
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem(CACHE_KEY) : null;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        return {
+          faculty: Array.isArray(parsed.faculty) ? parsed.faculty : (INITIAL_FACULTY || []),
+          students: Array.isArray(parsed.students) ? parsed.students : (INITIAL_STUDENTS || []),
+          courses: Array.isArray(parsed.courses) ? parsed.courses : (INITIAL_COURSES || []),
+          certificates: Array.isArray(parsed.certificates) ? parsed.certificates : (INITIAL_CERTIFICATES || []),
+          projects: Array.isArray(parsed.projects) ? parsed.projects : (INITIAL_PROJECTS || []),
+          researchPapers: Array.isArray(parsed.researchPapers) ? parsed.researchPapers : (INITIAL_RESEARCH_PAPERS || []),
+          hackathons: Array.isArray(parsed.hackathons) ? parsed.hackathons : (INITIAL_HACKATHONS || [])
+        };
+      }
+    }
+  } catch (err) {
+    console.warn("Failed to load local DB cache:", err);
+  }
+  return DEFAULT_DATA;
+};
+
+const saveCachedData = (dataToSave) => {
+  try {
+    if (typeof window !== 'undefined' && dataToSave) {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(dataToSave));
+    }
+  } catch (err) {
+    console.warn("Failed to save local DB cache:", err);
+  }
+};
+
 export const QuantumDBProvider = ({ children }) => {
-  const [data, setData] = useState(DEFAULT_DATA);
+  // Offline-first initial state: Always instantly available at 0ms upon page refresh
+  const [data, setData] = useState(() => loadCachedData());
   const [cloudStatus, setCloudStatus] = useState('connecting'); // 'connecting' | 'synced' | 'syncing' | 'offline' | 'table_needed'
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [syncError, setSyncError] = useState(null);
@@ -45,6 +81,7 @@ export const QuantumDBProvider = ({ children }) => {
 
   // Helper to push full state to Supabase dedicated tables + unified realtime documents store
   const persistToSupabase = useCallback(async (stateToSave) => {
+    saveCachedData(stateToSave);
     const jsonStr = getJson(stateToSave);
     if (!jsonStr || jsonStr === lastSyncedHash.current) {
       return true;
@@ -966,16 +1003,48 @@ export const QuantumDBProvider = ({ children }) => {
         const baseFaculty = Array.isArray(cloudData.faculty) && cloudData.faculty.length > 0 ? cloudData.faculty : loadedFaculty;
         const baseStudents = Array.isArray(cloudData.students) && cloudData.students.length > 0 ? cloudData.students : loadedStudents;
 
+        // Merge with any local cache items to prevent data loss if created while offline
+        const localCurrent = loadCachedData();
+
+        const localCourseMap = new Map((localCurrent.courses || []).map(c => [String(c.id).toLowerCase(), c]));
+        baseCourses.forEach(c => localCourseMap.set(String(c.id).toLowerCase(), c));
+        const mergedCourses = Array.from(localCourseMap.values());
+
+        const localCertMap = new Map((localCurrent.certificates || []).map(c => [String(c.id).toLowerCase(), c]));
+        baseCerts.forEach(c => localCertMap.set(String(c.id).toLowerCase(), c));
+        const mergedCerts = Array.from(localCertMap.values());
+
+        const localProjMap = new Map((localCurrent.projects || []).map(p => [String(p.id).toLowerCase(), p]));
+        baseProjects.forEach(p => localProjMap.set(String(p.id).toLowerCase(), p));
+        const mergedProjects = Array.from(localProjMap.values());
+
+        const localPaperMap = new Map((localCurrent.researchPapers || []).map(p => [String(p.id).toLowerCase(), p]));
+        basePapers.forEach(p => localPaperMap.set(String(p.id).toLowerCase(), p));
+        const mergedPapers = Array.from(localPaperMap.values());
+
+        const localHckMap = new Map((localCurrent.hackathons || []).map(h => [String(h.id).toLowerCase(), h]));
+        baseHackathons.forEach(h => localHckMap.set(String(h.id).toLowerCase(), h));
+        const mergedHackathons = Array.from(localHckMap.values());
+
+        const localFacMap = new Map((localCurrent.faculty || []).map(f => [String(f.id).toLowerCase(), f]));
+        baseFaculty.forEach(f => localFacMap.set(String(f.id).toLowerCase(), f));
+        const mergedFaculty = Array.from(localFacMap.values());
+
+        const localStuMap = new Map((localCurrent.students || []).map(s => [String(s.id).toLowerCase(), s]));
+        baseStudents.forEach(s => localStuMap.set(String(s.id).toLowerCase(), s));
+        const mergedStudents = Array.from(localStuMap.values());
+
         const assembled = {
-          faculty: baseFaculty.length > 0 ? baseFaculty : (INITIAL_FACULTY || []),
-          students: baseStudents.length > 0 ? baseStudents : (INITIAL_STUDENTS || []),
-          courses: baseCourses.length > 0 ? baseCourses : (INITIAL_COURSES || []),
-          certificates: baseCerts.length > 0 ? baseCerts : (INITIAL_CERTIFICATES || []),
-          projects: baseProjects.length > 0 ? baseProjects : (INITIAL_PROJECTS || []),
-          researchPapers: basePapers.length > 0 ? basePapers : (INITIAL_RESEARCH_PAPERS || []),
-          hackathons: baseHackathons.length > 0 ? baseHackathons : (INITIAL_HACKATHONS || [])
+          faculty: mergedFaculty.length > 0 ? mergedFaculty : (INITIAL_FACULTY || []),
+          students: mergedStudents.length > 0 ? mergedStudents : (INITIAL_STUDENTS || []),
+          courses: mergedCourses.length > 0 ? mergedCourses : (INITIAL_COURSES || []),
+          certificates: mergedCerts.length > 0 ? mergedCerts : (INITIAL_CERTIFICATES || []),
+          projects: mergedProjects.length > 0 ? mergedProjects : (INITIAL_PROJECTS || []),
+          researchPapers: mergedPapers.length > 0 ? mergedPapers : (INITIAL_RESEARCH_PAPERS || []),
+          hackathons: mergedHackathons.length > 0 ? mergedHackathons : (INITIAL_HACKATHONS || [])
         };
 
+        saveCachedData(assembled);
         lastSyncedHash.current = getJson(assembled);
         setData(assembled);
         setCloudStatus('synced');
@@ -983,17 +1052,24 @@ export const QuantumDBProvider = ({ children }) => {
         return;
       }
 
-      // If no main_state yet, use dedicated tables or DEFAULT_DATA
+      // If no main_state yet, use dedicated tables or cached local data
       if (hasDedicatedData) {
+        const localCurrent = loadCachedData();
+
+        const localCourseMap = new Map((localCurrent.courses || []).map(c => [String(c.id).toLowerCase(), c]));
+        loadedCourses.forEach(c => localCourseMap.set(String(c.id).toLowerCase(), c));
+        const mergedCourses = Array.from(localCourseMap.values());
+
         const assembled = {
-          faculty: loadedFaculty.length > 0 ? loadedFaculty : (INITIAL_FACULTY || []),
-          students: loadedStudents.length > 0 ? loadedStudents : (INITIAL_STUDENTS || []),
-          courses: loadedCourses.length > 0 ? loadedCourses : (INITIAL_COURSES || []),
-          certificates: loadedCertificates.length > 0 ? loadedCertificates : (INITIAL_CERTIFICATES || []),
-          projects: loadedProjects.length > 0 ? loadedProjects : (INITIAL_PROJECTS || []),
-          researchPapers: loadedPapers.length > 0 ? loadedPapers : (INITIAL_RESEARCH_PAPERS || []),
-          hackathons: loadedHackathons.length > 0 ? loadedHackathons : (INITIAL_HACKATHONS || [])
+          faculty: loadedFaculty.length > 0 ? loadedFaculty : (localCurrent.faculty?.length > 0 ? localCurrent.faculty : (INITIAL_FACULTY || [])),
+          students: loadedStudents.length > 0 ? loadedStudents : (localCurrent.students?.length > 0 ? localCurrent.students : (INITIAL_STUDENTS || [])),
+          courses: mergedCourses.length > 0 ? mergedCourses : (INITIAL_COURSES || []),
+          certificates: loadedCertificates.length > 0 ? loadedCertificates : (localCurrent.certificates?.length > 0 ? localCurrent.certificates : (INITIAL_CERTIFICATES || [])),
+          projects: loadedProjects.length > 0 ? loadedProjects : (localCurrent.projects?.length > 0 ? localCurrent.projects : (INITIAL_PROJECTS || [])),
+          researchPapers: loadedPapers.length > 0 ? loadedPapers : (localCurrent.researchPapers?.length > 0 ? localCurrent.researchPapers : (INITIAL_RESEARCH_PAPERS || [])),
+          hackathons: loadedHackathons.length > 0 ? loadedHackathons : (localCurrent.hackathons?.length > 0 ? localCurrent.hackathons : (INITIAL_HACKATHONS || []))
         };
+        saveCachedData(assembled);
         lastSyncedHash.current = getJson(assembled);
         setData(assembled);
         setCloudStatus('synced');
@@ -1004,10 +1080,15 @@ export const QuantumDBProvider = ({ children }) => {
         return;
       }
 
-      setData(DEFAULT_DATA);
+      // Keep local cached data so nothing disappears on reload
+      const localData = loadCachedData();
+      setData(localData);
       setCloudStatus('synced');
     } catch (e) {
       console.error("Supabase initial load error:", e);
+      // Fallback cleanly to local cache
+      const localData = loadCachedData();
+      setData(localData);
       setCloudStatus('offline');
       setSyncError(e.message);
     } finally {
@@ -1036,7 +1117,7 @@ export const QuantumDBProvider = ({ children }) => {
 
           if (incomingJson && incomingJson !== lastSyncedHash.current) {
             lastSyncedHash.current = incomingJson;
-            setData({
+            const assembled = {
               faculty: incomingData.faculty || [],
               students: incomingData.students || [],
               courses: incomingData.courses || [],
@@ -1044,7 +1125,9 @@ export const QuantumDBProvider = ({ children }) => {
               projects: incomingData.projects || [],
               researchPapers: incomingData.researchPapers || [],
               hackathons: incomingData.hackathons || []
-            });
+            };
+            saveCachedData(assembled);
+            setData(assembled);
             setLastSyncTime(new Date());
           }
           setCloudStatus('synced');
@@ -1058,10 +1141,12 @@ export const QuantumDBProvider = ({ children }) => {
     };
   }, [fetchFromSupabase]);
 
-  // Central state update function that pushes directly to Supabase
+  // Central state update function that pushes directly to Supabase + local cache
   const updateDataAndSync = useCallback((updater) => {
     setData(prev => {
       const nextData = typeof updater === 'function' ? updater(prev) : updater;
+      // Immediately save to localStorage
+      saveCachedData(nextData);
       // Immediately push to Supabase Cloud
       persistToSupabase(nextData);
       return nextData;
@@ -1542,7 +1627,10 @@ export const QuantumDBProvider = ({ children }) => {
   };
 
   const forceCloudSync = async () => {
-    return await persistToSupabase(dataRef.current);
+    saveCachedData(dataRef.current);
+    const success = await persistToSupabase(dataRef.current);
+    await fetchFromSupabase();
+    return success;
   };
 
   const resetSeedData = () => {

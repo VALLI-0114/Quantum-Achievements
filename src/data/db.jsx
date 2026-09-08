@@ -63,12 +63,15 @@ export const QuantumDBProvider = ({ children }) => {
           updated_at: new Date().toISOString()
         }, { onConflict: 'id' });
 
-      // 2. Also save to separate individual relational tables if they exist
+      // 2. Save to Dedicated Faculty Tables & Student Tables
       const tableUpserts = [];
 
+      // Faculty Profiles
       if (stateToSave.faculty && stateToSave.faculty.length > 0) {
         tableUpserts.push(supabase.from('faculty').upsert(stateToSave.faculty, { onConflict: 'id' }));
       }
+
+      // Student Profiles
       if (stateToSave.students && stateToSave.students.length > 0) {
         tableUpserts.push(supabase.from('students').upsert(stateToSave.students.map(s => ({
           id: s.id,
@@ -80,7 +83,10 @@ export const QuantumDBProvider = ({ children }) => {
           avatar: s.avatar
         })), { onConflict: 'id' }));
       }
+
+      // Faculty Courses & Student Courses
       if (stateToSave.courses && stateToSave.courses.length > 0) {
+        // Generic courses table
         tableUpserts.push(supabase.from('courses').upsert(stateToSave.courses.map(c => ({
           id: c.id,
           code: c.code,
@@ -93,7 +99,93 @@ export const QuantumDBProvider = ({ children }) => {
           student_completions: c.studentCompletions || c.student_completions || [],
           student_enrolled: c.studentEnrolled || c.student_enrolled || []
         })), { onConflict: 'id' }));
+
+        // Dedicated faculty_courses
+        const facCourseRows = [];
+        const stuCourseRows = [];
+
+        stateToSave.courses.forEach(c => {
+          const isFaculty = c.targetAudience === 'faculty' || (c.facultyCompletions && c.facultyCompletions.length > 0) || (c.facultyEnrolled && c.facultyEnrolled.length > 0) || (!c.targetAudience && (!c.studentCompletions || c.studentCompletions.length === 0));
+          const isStudent = c.targetAudience === 'students' || c.targetAudience === 'student' || (c.studentCompletions && c.studentCompletions.length > 0) || (c.studentEnrolled && c.studentEnrolled.length > 0);
+
+          if (isFaculty) {
+            if (c.facultyCompletions && c.facultyCompletions.length > 0) {
+              c.facultyCompletions.forEach((fc, idx) => {
+                facCourseRows.push({
+                  id: `${c.id}-FC-${idx + 1}`,
+                  course_code: c.code,
+                  course_name: c.name,
+                  provider: c.provider,
+                  category: c.category || 'Quantum',
+                  description: c.description || '',
+                  faculty_name: fc.facultyName || 'Faculty Member',
+                  faculty_id: fc.facultyId || '',
+                  completion_date: fc.completionDate || '',
+                  grade: fc.grade || 'Verified',
+                  certificate_id: fc.certificateId || '',
+                  status: 'Completed'
+                });
+              });
+            } else {
+              facCourseRows.push({
+                id: c.id,
+                course_code: c.code,
+                course_name: c.name,
+                provider: c.provider,
+                category: c.category || 'Quantum',
+                description: c.description || '',
+                faculty_name: '',
+                faculty_id: '',
+                completion_date: '',
+                grade: '',
+                certificate_id: '',
+                status: 'Available'
+              });
+            }
+          }
+
+          if (isStudent) {
+            if (c.studentCompletions && c.studentCompletions.length > 0) {
+              c.studentCompletions.forEach((sc, idx) => {
+                stuCourseRows.push({
+                  id: `${c.id}-SC-${idx + 1}`,
+                  course_code: c.code,
+                  course_name: c.name,
+                  provider: c.provider,
+                  category: c.category || 'Quantum',
+                  description: c.description || '',
+                  student_name: sc.studentName || 'Student Candidate',
+                  student_id: sc.studentId || '',
+                  completion_date: sc.completionDate || '',
+                  grade: sc.grade || 'Verified',
+                  certificate_id: sc.certificateId || '',
+                  status: 'Completed'
+                });
+              });
+            } else {
+              stuCourseRows.push({
+                id: c.id,
+                course_code: c.code,
+                course_name: c.name,
+                provider: c.provider,
+                category: c.category || 'Quantum',
+                description: c.description || '',
+                student_name: '',
+                student_id: '',
+                completion_date: '',
+                grade: '',
+                certificate_id: '',
+                status: 'Available'
+              });
+            }
+          }
+        });
+
+        if (facCourseRows.length > 0) tableUpserts.push(supabase.from('faculty_courses').upsert(facCourseRows, { onConflict: 'id' }));
+        if (stuCourseRows.length > 0) tableUpserts.push(supabase.from('student_courses').upsert(stuCourseRows, { onConflict: 'id' }));
       }
+
+      // Faculty Certificates & Student Certificates
       if (stateToSave.certificates && stateToSave.certificates.length > 0) {
         tableUpserts.push(supabase.from('certificates').upsert(stateToSave.certificates.map(c => ({
           id: c.id,
@@ -104,7 +196,84 @@ export const QuantumDBProvider = ({ children }) => {
           faculty_recipients: c.facultyRecipients || c.faculty_recipients || [],
           student_recipients: c.studentRecipients || c.student_recipients || []
         })), { onConflict: 'id' }));
+
+        const facCertRows = [];
+        const stuCertRows = [];
+
+        stateToSave.certificates.forEach(c => {
+          const isFaculty = c.targetAudience === 'faculty' || (c.facultyRecipients && c.facultyRecipients.length > 0) || (!c.targetAudience && (!c.studentRecipients || c.studentRecipients.length === 0));
+          const isStudent = c.targetAudience === 'students' || c.targetAudience === 'student' || (c.studentRecipients && c.studentRecipients.length > 0);
+
+          if (isFaculty) {
+            if (c.facultyRecipients && c.facultyRecipients.length > 0) {
+              c.facultyRecipients.forEach((fr, idx) => {
+                facCertRows.push({
+                  id: `${c.id}-FR-${idx + 1}`,
+                  title: c.title,
+                  issuer: c.issuer,
+                  code: c.code,
+                  faculty_name: fr.facultyName || 'Faculty Researcher',
+                  faculty_id: fr.facultyId || '',
+                  credential_id: fr.credentialId || '',
+                  issue_date: fr.issueDate || '',
+                  score: fr.score || 'Mastery',
+                  verification_url: c.verificationUrl || ''
+                });
+              });
+            } else {
+              facCertRows.push({
+                id: c.id,
+                title: c.title,
+                issuer: c.issuer,
+                code: c.code,
+                faculty_name: '',
+                faculty_id: '',
+                credential_id: '',
+                issue_date: '',
+                score: '',
+                verification_url: c.verificationUrl || ''
+              });
+            }
+          }
+
+          if (isStudent) {
+            if (c.studentRecipients && c.studentRecipients.length > 0) {
+              c.studentRecipients.forEach((sr, idx) => {
+                stuCertRows.push({
+                  id: `${c.id}-SR-${idx + 1}`,
+                  title: c.title,
+                  issuer: c.issuer,
+                  code: c.code,
+                  student_name: sr.studentName || 'Student Recipient',
+                  student_id: sr.studentId || '',
+                  credential_id: sr.credentialId || '',
+                  issue_date: sr.issueDate || '',
+                  score: sr.score || 'Mastery',
+                  verification_url: c.verificationUrl || ''
+                });
+              });
+            } else {
+              stuCertRows.push({
+                id: c.id,
+                title: c.title,
+                issuer: c.issuer,
+                code: c.code,
+                student_name: '',
+                student_id: '',
+                credential_id: '',
+                issue_date: '',
+                score: '',
+                verification_url: c.verificationUrl || ''
+              });
+            }
+          }
+        });
+
+        if (facCertRows.length > 0) tableUpserts.push(supabase.from('faculty_certificates').upsert(facCertRows, { onConflict: 'id' }));
+        if (stuCertRows.length > 0) tableUpserts.push(supabase.from('student_certificates').upsert(stuCertRows, { onConflict: 'id' }));
       }
+
+      // Faculty Projects & Student Projects
       if (stateToSave.projects && stateToSave.projects.length > 0) {
         tableUpserts.push(supabase.from('projects').upsert(stateToSave.projects.map(p => ({
           id: p.id,
@@ -117,7 +286,52 @@ export const QuantumDBProvider = ({ children }) => {
           faculty_involved: p.facultyInvolved || p.faculty_involved || [],
           students_involved: p.studentsInvolved || p.students_involved || []
         })), { onConflict: 'id' }));
+
+        const facProjRows = [];
+        const stuProjRows = [];
+
+        stateToSave.projects.forEach(p => {
+          const isFaculty = p.targetAudience === 'faculty' || (p.facultyInvolved && p.facultyInvolved.length > 0) || (!p.targetAudience && (!p.studentsInvolved || p.studentsInvolved.length === 0));
+          const isStudent = p.targetAudience === 'students' || p.targetAudience === 'student' || (p.studentsInvolved && p.studentsInvolved.length > 0);
+
+          if (isFaculty) {
+            const facLead = (p.facultyInvolved || [])[0] || {};
+            facProjRows.push({
+              id: p.id,
+              title: p.title,
+              domain: p.domain || '',
+              tech_stack: Array.isArray(p.techStack) ? p.techStack.join(', ') : String(p.techStack || ''),
+              description: p.description || '',
+              status: p.status || 'Active',
+              github_url: p.githubUrl || '',
+              faculty_name: facLead.facultyName || 'Faculty PI',
+              faculty_id: facLead.facultyId || '',
+              role: facLead.role || 'Principal Investigator'
+            });
+          }
+
+          if (isStudent) {
+            const stuLead = (p.studentsInvolved || [])[0] || {};
+            stuProjRows.push({
+              id: p.id,
+              title: p.title,
+              domain: p.domain || '',
+              tech_stack: Array.isArray(p.techStack) ? p.techStack.join(', ') : String(p.techStack || ''),
+              description: p.description || '',
+              status: p.status || 'Active',
+              github_url: p.githubUrl || '',
+              student_name: stuLead.studentName || 'Student Lead',
+              student_id: stuLead.studentId || '',
+              role: stuLead.role || 'Project Lead & Developer'
+            });
+          }
+        });
+
+        if (facProjRows.length > 0) tableUpserts.push(supabase.from('faculty_projects').upsert(facProjRows, { onConflict: 'id' }));
+        if (stuProjRows.length > 0) tableUpserts.push(supabase.from('student_projects').upsert(stuProjRows, { onConflict: 'id' }));
       }
+
+      // Faculty Papers & Student Papers
       if (stateToSave.researchPapers && stateToSave.researchPapers.length > 0) {
         tableUpserts.push(supabase.from('research_papers').upsert(stateToSave.researchPapers.map(rp => ({
           id: rp.id,
@@ -131,7 +345,50 @@ export const QuantumDBProvider = ({ children }) => {
           faculty_authors: rp.facultyAuthors || rp.faculty_authors || [],
           student_authors: rp.studentAuthors || rp.student_authors || []
         })), { onConflict: 'id' }));
+
+        const facPaperRows = [];
+        const stuPaperRows = [];
+
+        stateToSave.researchPapers.forEach(rp => {
+          const isFaculty = rp.targetAudience === 'faculty' || (rp.facultyAuthors && rp.facultyAuthors.length > 0) || (!rp.targetAudience && (!rp.studentAuthors || rp.studentAuthors.length === 0));
+          const isStudent = rp.targetAudience === 'students' || rp.targetAudience === 'student' || (rp.studentAuthors && rp.studentAuthors.length > 0);
+
+          if (isFaculty) {
+            facPaperRows.push({
+              id: rp.id,
+              title: rp.title,
+              venue: rp.venue || '',
+              doi: rp.doi || '',
+              research_area: rp.researchArea || '',
+              abstract: rp.abstract || '',
+              citations: rp.citations || 0,
+              date: rp.date || '',
+              faculty_name: (rp.facultyAuthors || []).join(', ') || 'Faculty Author',
+              faculty_id: (rp.facultyAuthors || [])[0] || ''
+            });
+          }
+
+          if (isStudent) {
+            stuPaperRows.push({
+              id: rp.id,
+              title: rp.title,
+              venue: rp.venue || '',
+              doi: rp.doi || '',
+              research_area: rp.researchArea || '',
+              abstract: rp.abstract || '',
+              citations: rp.citations || 0,
+              date: rp.date || '',
+              student_name: (rp.studentAuthors || []).join(', ') || 'Student Author',
+              student_id: (rp.studentAuthors || [])[0] || ''
+            });
+          }
+        });
+
+        if (facPaperRows.length > 0) tableUpserts.push(supabase.from('faculty_papers').upsert(facPaperRows, { onConflict: 'id' }));
+        if (stuPaperRows.length > 0) tableUpserts.push(supabase.from('student_papers').upsert(stuPaperRows, { onConflict: 'id' }));
       }
+
+      // Faculty Hackathons & Student Hackathons
       if (stateToSave.hackathons && stateToSave.hackathons.length > 0) {
         tableUpserts.push(supabase.from('hackathons').upsert(stateToSave.hackathons.map(h => ({
           id: h.id,
@@ -142,6 +399,49 @@ export const QuantumDBProvider = ({ children }) => {
           faculty_participants: h.facultyParticipants || h.faculty_participants || [],
           student_participants: h.studentParticipants || h.student_participants || []
         })), { onConflict: 'id' }));
+
+        const facHckRows = [];
+        const stuHckRows = [];
+
+        stateToSave.hackathons.forEach(h => {
+          const isFaculty = h.targetAudience === 'faculty' || (h.facultyParticipants && h.facultyParticipants.length > 0) || (!h.targetAudience && (!h.studentParticipants || h.studentParticipants.length === 0));
+          const isStudent = h.targetAudience === 'students' || h.targetAudience === 'student' || (h.studentParticipants && h.studentParticipants.length > 0);
+
+          if (isFaculty) {
+            const facP = (h.facultyParticipants || [])[0] || {};
+            facHckRows.push({
+              id: h.id,
+              hackathon_name: h.name,
+              organizer: h.organizer || '',
+              edition: h.edition || '',
+              date: h.date || '',
+              faculty_name: facP.facultyName || 'Faculty Mentor',
+              faculty_id: facP.facultyId || '',
+              team_name: facP.teamName || 'Faculty Team',
+              project_built: facP.projectBuilt || '',
+              award: facP.award || 'Winner'
+            });
+          }
+
+          if (isStudent) {
+            const stuP = (h.studentParticipants || [])[0] || {};
+            stuHckRows.push({
+              id: h.id,
+              hackathon_name: h.name,
+              organizer: h.organizer || '',
+              edition: h.edition || '',
+              date: h.date || '',
+              student_name: stuP.studentName || 'Student Lead',
+              student_id: stuP.studentId || '',
+              team_name: stuP.teamName || 'Student Team',
+              project_built: stuP.projectBuilt || '',
+              award: stuP.award || 'Winner'
+            });
+          }
+        });
+
+        if (facHckRows.length > 0) tableUpserts.push(supabase.from('faculty_hackathons').upsert(facHckRows, { onConflict: 'id' }));
+        if (stuHckRows.length > 0) tableUpserts.push(supabase.from('student_hackathons').upsert(stuHckRows, { onConflict: 'id' }));
       }
 
       await Promise.allSettled(tableUpserts);

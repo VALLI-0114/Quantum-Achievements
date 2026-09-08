@@ -295,13 +295,14 @@ export const StudentHackathons = ({ onOpenProfile, onAddHackathon }) => {
                 style={{ cursor: 'pointer' }}
                 onClick={() => setSelectedHackathonId(h.id)}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                  <span className="metric-pill primary">{h.edition}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{h.date}</span>
+                <div className="card-header-row">
+                  <span className="metric-pill primary card-badge-pill" title={h.edition}>{h.edition}</span>
+                  <div className="card-header-meta">
+                    <span className="card-header-meta-text" title={h.date}>{h.date}</span>
                     <button
                       className="btn-icon-danger"
                       title="Delete Hackathon"
+                      style={{ flexShrink: 0 }}
                       onClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
@@ -312,16 +313,16 @@ export const StudentHackathons = ({ onOpenProfile, onAddHackathon }) => {
                         });
                       }}
                     >
-                      <Trash2 size={15} />
+                      <Trash2 size={13} />
                     </button>
                   </div>
                 </div>
 
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+                <h3 className="card-title-clamp" title={h.name}>
                   {h.name}
                 </h3>
 
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={h.organizer}>
                   Organizer: <strong>{h.organizer}</strong>
                 </div>
 

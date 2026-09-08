@@ -460,13 +460,18 @@ export const StudentCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }
                 style={{ cursor: 'pointer', position: 'relative' }}
                 onClick={() => setSelectedCourseId(course.id)}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                  <span className="metric-pill primary">{course.code}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>{course.provider}</span>
+                <div className="card-header-row">
+                  <span className="metric-pill primary card-badge-pill" title={course.code}>
+                    {course.code}
+                  </span>
+                  <div className="card-header-meta">
+                    <span className="card-header-meta-text" title={course.provider}>
+                      {course.provider}
+                    </span>
                     <button
                       className="btn-icon-danger"
                       title="Delete Course"
+                      style={{ flexShrink: 0 }}
                       onClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
@@ -482,11 +487,11 @@ export const StudentCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }
                   </div>
                 </div>
 
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem', lineHeight: 1.35 }}>
+                <h3 className="card-title-clamp" title={course.name}>
                   {course.name}
                 </h3>
 
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', flex: 1, lineClamp: 2 }}>
+                <p className="card-desc-clamp" title={course.description}>
                   {course.description}
                 </p>
 
@@ -496,6 +501,7 @@ export const StudentCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }
                   borderRadius: '10px',
                   padding: '0.85rem 1rem',
                   marginBottom: '1rem',
+                  marginTop: 'auto',
                   border: '1px solid var(--border-light)'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
@@ -522,7 +528,7 @@ export const StudentCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '0.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.5rem' }}>
                   <span style={{ fontSize: '0.82rem', color: 'var(--primary)', fontWeight: 600 }}>
                     Explore Student Roster →
                   </span>

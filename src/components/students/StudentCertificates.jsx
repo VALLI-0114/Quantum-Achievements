@@ -360,13 +360,18 @@ export const StudentCertificates = ({ onOpenCertificate, onOpenProfile, onAddCer
                 style={{ cursor: 'pointer', position: 'relative' }}
                 onClick={() => setSelectedCertId(cert.id)}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                  <span className="metric-pill primary">{cert.code || 'VERIFIED'}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{cert.issuer}</span>
+                <div className="card-header-row">
+                  <span className="metric-pill primary card-badge-pill" title={cert.code || 'VERIFIED'}>
+                    {cert.code || 'VERIFIED'}
+                  </span>
+                  <div className="card-header-meta">
+                    <span className="card-header-meta-text" title={cert.issuer}>
+                      {cert.issuer}
+                    </span>
                     <button
                       className="btn-icon-danger"
                       title="Delete Certificate"
+                      style={{ flexShrink: 0 }}
                       onClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
@@ -382,7 +387,7 @@ export const StudentCertificates = ({ onOpenCertificate, onOpenProfile, onAddCer
                   </div>
                 </div>
 
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.75rem', lineHeight: 1.35 }}>
+                <h3 className="card-title-clamp" title={cert.title}>
                   {cert.title}
                 </h3>
 

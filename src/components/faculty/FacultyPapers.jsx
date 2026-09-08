@@ -276,13 +276,14 @@ export const FacultyPapers = ({ onOpenProfile, onAddPaper }) => {
                 style={{ cursor: 'pointer' }}
                 onClick={() => setSelectedPaperId(paper.id)}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <span className="metric-pill secondary">{paper.researchArea}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span className="metric-pill primary">{paper.citations || 0} Citations</span>
+                <div className="card-header-row">
+                  <span className="metric-pill secondary card-badge-pill" title={paper.researchArea}>{paper.researchArea}</span>
+                  <div className="card-header-meta">
+                    <span className="metric-pill primary" style={{ fontSize: '0.74rem' }}>{paper.citations || 0} Citations</span>
                     <button
                       className="btn-icon-danger"
                       title="Delete Research Paper"
+                      style={{ flexShrink: 0 }}
                       onClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
@@ -293,20 +294,20 @@ export const FacultyPapers = ({ onOpenProfile, onAddPaper }) => {
                         });
                       }}
                     >
-                      <Trash2 size={15} />
+                      <Trash2 size={13} />
                     </button>
                   </div>
                 </div>
 
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+                <h3 className="card-title-clamp" title={paper.title}>
                   "{paper.title}"
                 </h3>
 
-                <div style={{ fontSize: '0.82rem', color: 'var(--primary)', fontWeight: 600, marginBottom: '0.75rem' }}>
+                <div style={{ fontSize: '0.82rem', color: 'var(--primary)', fontWeight: 600, marginBottom: '0.75rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={paper.venue}>
                   {paper.venue}
                 </div>
 
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', flex: 1, lineClamp: 2 }}>
+                <p className="card-desc-clamp" title={paper.abstract}>
                   {paper.abstract}
                 </p>
 

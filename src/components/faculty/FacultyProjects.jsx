@@ -318,13 +318,14 @@ export const FacultyProjects = ({ onOpenProfile, onAddProject }) => {
                 style={{ cursor: 'pointer', position: 'relative' }}
                 onClick={() => setSelectedProjectId(project.id)}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                  <span className="metric-pill secondary">{project.domain}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <span className="metric-pill success">{project.status}</span>
+                <div className="card-header-row">
+                  <span className="metric-pill secondary card-badge-pill" title={project.domain}>{project.domain}</span>
+                  <div className="card-header-meta">
+                    <span className="metric-pill success" style={{ fontSize: '0.74rem' }}>{project.status}</span>
                     <button
                       className="btn-icon-danger"
                       title="Delete Project"
+                      style={{ flexShrink: 0 }}
                       onClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
@@ -340,18 +341,21 @@ export const FacultyProjects = ({ onOpenProfile, onAddProject }) => {
                   </div>
                 </div>
 
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+                <h3 className="card-title-clamp" title={project.title}>
                   {project.title}
                 </h3>
 
-                <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', flex: 1 }}>
+                <p className="card-desc-clamp" title={project.description}>
                   {project.description}
                 </p>
 
-                <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-                  {(project.techStack || []).map((t, idx) => (
+                <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginBottom: '1rem', marginTop: 'auto' }}>
+                  {(project.techStack || []).slice(0, 4).map((t, idx) => (
                     <span key={idx} className="metric-pill primary" style={{ fontSize: '0.72rem' }}>{t}</span>
                   ))}
+                  {(project.techStack || []).length > 4 && (
+                    <span className="metric-pill secondary" style={{ fontSize: '0.72rem' }}>+{(project.techStack || []).length - 4}</span>
+                  )}
                 </div>
 
                 <div style={{

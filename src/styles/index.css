@@ -76,7 +76,7 @@ html {
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--bg-main);
+  background-color: #F8FAFC;
   color: var(--text-primary);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -94,6 +94,8 @@ body {
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 
 /* Subtle Quantum Background Mesh Pattern */
@@ -105,10 +107,10 @@ body {
   height: 100vh;
   pointer-events: none;
   z-index: 0;
-  opacity: 0.35;
+  opacity: 0.15;
   background-image: 
-    radial-gradient(#CBD5E1 1px, transparent 1px),
-    radial-gradient(#E2E8F0 1px, var(--bg-main) 1px);
+    radial-gradient(#94A3B8 1px, transparent 1px),
+    radial-gradient(#CBD5E1 1px, transparent 1px);
   background-size: 32px 32px;
   background-position: 0 0, 16px 16px;
 }
@@ -542,7 +544,9 @@ body {
 }
 
 .item-card {
-  background: var(--bg-surface);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   padding: 1.5rem;

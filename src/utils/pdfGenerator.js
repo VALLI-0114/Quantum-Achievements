@@ -1355,3 +1355,168 @@ export const downloadCandidatePortfolioPDF = ({
 
   doc.save(`${name.replace(/\s+/g, '_')}_Quantum_Portfolio_Dossier.pdf`);
 };
+
+// 12. Official Certificate Document PDF (Landscape Luxury Format)
+export const downloadOfficialCertificatePDF = ({
+  recipientName = "Candidate Name",
+  recipientRole = "Faculty Member",
+  certificateTitle = "Quantum Computing Certification",
+  issuer = "IBM Quantum Network & Q-HUB",
+  credentialId = "QHUB-CERT-2026",
+  issueDate = new Date().toISOString().slice(0, 10),
+  grade = "Distinction / 98%"
+}) => {
+  const doc = new jsPDF({
+    orientation: 'landscape',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  const width = doc.internal.pageSize.getWidth(); // 297mm
+  const height = doc.internal.pageSize.getHeight(); // 210mm
+
+  // 1. Background
+  doc.setFillColor(255, 255, 255);
+  doc.rect(0, 0, width, height, 'F');
+
+  // 2. Outer Ornate Border (Deep Slate Navy)
+  doc.setDrawColor(15, 23, 42);
+  doc.setLineWidth(3);
+  doc.rect(8, 8, width - 16, height - 16);
+
+  // 3. Inner Gold Accent Border
+  doc.setDrawColor(217, 119, 6);
+  doc.setLineWidth(0.8);
+  doc.rect(12, 12, width - 24, height - 24);
+
+  // 4. Fine Corner Accents
+  doc.setFillColor(79, 70, 229);
+  doc.circle(12, 12, 2.5, 'F');
+  doc.circle(width - 12, 12, 2.5, 'F');
+  doc.circle(12, height - 12, 2.5, 'F');
+  doc.circle(width - 12, height - 12, 2.5, 'F');
+
+  // 5. Header / Institution Logo Badge
+  doc.setFillColor(245, 243, 255);
+  doc.setDrawColor(196, 181, 253);
+  doc.roundedRect(width / 2 - 60, 18, 120, 10, 2, 2, 'FD');
+
+  doc.setTextColor(79, 70, 229);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.text("INSTITUTIONAL QUANTUM COMPUTING NETWORK & Q-HUB", width / 2, 24.5, { align: 'center' });
+
+  // 6. Certificate Heading
+  doc.setTextColor(15, 23, 42);
+  doc.setFont('times', 'bold');
+  doc.setFontSize(24);
+  doc.text("CERTIFICATE OF ACHIEVEMENT", width / 2, 42, { align: 'center' });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text("THIS OFFICIAL CREDENTIAL IS PROUDLY CONFERRED UPON", width / 2, 51, { align: 'center' });
+
+  // 7. Recipient Name
+  doc.setTextColor(67, 56, 202);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(22);
+  doc.text(recipientName, width / 2, 68, { align: 'center' });
+
+  // Underline for recipient name
+  doc.setDrawColor(224, 231, 255);
+  doc.setLineWidth(0.6);
+  doc.line(width / 2 - 65, 71, width / 2 + 65, 71);
+
+  // 8. Role & Description
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`as a recognized ${recipientRole}, in formal recognition of successfully completing the rigorous quantum curriculum, examination, and laboratory benchmarks for:`, width / 2, 80, { align: 'center', maxWidth: 210 });
+
+  // 9. Course / Certificate Title
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(width / 2 - 95, 87, 190, 22, 3, 3, 'FD');
+
+  doc.setTextColor(15, 23, 42);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.text(certificateTitle, width / 2, 97, { align: 'center' });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Accredited & Issued by: ${issuer}`, width / 2, 104, { align: 'center' });
+
+  // 10. Grade / Honors Badge
+  if (grade) {
+    doc.setFillColor(220, 252, 231);
+    doc.setDrawColor(134, 239, 172);
+    doc.roundedRect(width / 2 - 40, 115, 80, 8, 2, 2, 'FD');
+    doc.setTextColor(22, 101, 52);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.text(`Honors & Distinction: ${grade}`, width / 2, 120.5, { align: 'center' });
+  }
+
+  // 11. Verification Strip
+  doc.setFillColor(241, 245, 249);
+  doc.roundedRect(25, 133, width - 50, 13, 2, 2, 'F');
+
+  doc.setTextColor(71, 85, 105);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.text(`Credential ID: ${credentialId}`, 32, 141);
+  doc.text(`Issue Date: ${issueDate}`, width / 2, 141, { align: 'center' });
+  doc.text(`Status: Verified & Cryptographically Signed`, width - 32, 141, { align: 'right' });
+
+  // 12. Signatures and Seal
+  const sigY = 168;
+
+  // Left Signature: Dean
+  doc.setDrawColor(148, 163, 184);
+  doc.setLineWidth(0.4);
+  doc.line(35, sigY, 95, sigY);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Dr. A. Ramachandran", 65, sigY + 5, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text("Dean, Faculty of Quantum Science", 65, sigY + 9, { align: 'center' });
+
+  // Center Gold Seal
+  doc.setFillColor(254, 243, 199);
+  doc.setDrawColor(217, 119, 6);
+  doc.setLineWidth(1);
+  doc.circle(width / 2, sigY + 1, 12, 'FD');
+  doc.setTextColor(180, 83, 9);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.5);
+  doc.text("Q-HUB", width / 2, sigY - 1, { align: 'center' });
+  doc.text("OFFICIAL SEAL", width / 2, sigY + 3, { align: 'center' });
+  doc.text("VERIFIED", width / 2, sigY + 6, { align: 'center' });
+
+  // Right Signature: Academic Council Director
+  doc.setDrawColor(148, 163, 184);
+  doc.setLineWidth(0.4);
+  doc.line(width - 95, sigY, width - 35, sigY);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Prof. Elena Rostova", width - 65, sigY + 5, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text("Director, Quantum Academic Council", width - 65, sigY + 9, { align: 'center' });
+
+  // 13. Footer
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(148, 163, 184);
+  doc.text(`Official Academic Credential • Quantum Achievements & Research Portal • ${credentialId}`, width / 2, height - 12, { align: 'center' });
+
+  doc.save(`${recipientName.replace(/\s+/g, '_')}_Official_Quantum_Certificate.pdf`);
+};

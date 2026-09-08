@@ -16,9 +16,12 @@ import {
   UploadCloud,
   CheckCircle2,
   Loader2,
-  RefreshCw
+  Sparkles,
+  Scroll,
+  Layers
 } from 'lucide-react';
 import { compressImageFile } from '../../utils/imageCompressor';
+import { downloadOfficialCertificatePDF } from '../../utils/pdfGenerator';
 
 export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }) => {
   if (!isOpen || !certData) return null;
@@ -28,6 +31,7 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [imageLoadError, setImageLoadError] = useState(false);
 
   const fileInputRef = useRef(null);
 
@@ -44,12 +48,18 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
 
   // Local state for uploaded file to allow instant update when user uploads within modal
   const [currentFile, setCurrentFile] = useState(uploadedFile || certData.fileData || certData.document || null);
+  
+  // View mode: 'official' (Official generated accredited credential) | 'scan' (Uploaded physical image or PDF scan)
+  const [viewMode, setViewMode] = useState(() => (uploadedFile || certData.fileData || certData.document) ? 'scan' : 'official');
 
   useEffect(() => {
-    setCurrentFile(uploadedFile || certData.fileData || certData.document || null);
+    const file = uploadedFile || certData.fileData || certData.document || null;
+    setCurrentFile(file);
+    setViewMode(file ? 'scan' : 'official');
     setZoomLevel(1);
     setRotation(0);
     setUploadSuccess(false);
+    setImageLoadError(false);
   }, [certData, uploadedFile]);
 
   const fileObj = currentFile;
@@ -59,7 +69,7 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
   const fileType = (typeof fileObj === 'object' && fileObj?.type) ? fileObj.type : '';
 
   const isPdf = fileType.includes('pdf') || (typeof fileUrl === 'string' && fileUrl.startsWith('data:application/pdf')) || fileName.toLowerCase().endsWith('.pdf');
-  const hasUploadedFile = Boolean(fileUrl);
+  const hasUploadedFile = Boolean(fileUrl) && !imageLoadError;
 
   const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.25, 2.5));
   const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.25, 0.5));
@@ -69,53 +79,51 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
   };
   const handleRotate = () => setRotation(prev => (prev + 90) % 360);
 
-  const handleDownloadFile = () => {
+  // Download Official Institutional PDF Certificate
+  const handleDownloadOfficialPDF = () => {
+    downloadOfficialCertificatePDF({
+      recipientName,
+      recipientRole,
+      certificateTitle,
+      issuer,
+      credentialId,
+      issueDate,
+      grade
+    });
+  };
+
+  // Download Uploaded Raw Scan File
+  const handleDownloadScanFile = () => {
     if (!fileUrl) return;
     const link = document.createElement('a');
     link.href = fileUrl;
-    link.download = fileName || `${recipientName.replace(/\s+/g, '_')}_Certificate.${isPdf ? 'pdf' : 'jpg'}`;
+    link.download = fileName || `${recipientName.replace(/\s+/g, '_')}_Scan.${isPdf ? 'pdf' : 'jpg'}`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  const handleOpenInNewTab = () => {
-    if (!fileUrl) return;
-    const win = window.open();
-    if (win) {
-      if (isPdf) {
-        win.document.write(
-          `<iframe src="${fileUrl}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`
-        );
-      } else {
-        win.document.write(
-          `<body style="margin:0; background:#0b0f19; display:flex; justify-content:center; align-items:center; min-height:100vh;">
-            <img src="${fileUrl}" style="max-width:98%; max-height:98vh; object-fit:contain; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 8px;" alt="Certificate" />
-          </body>`
-        );
-      }
-      win.document.title = `${recipientName} - ${certificateTitle}`;
-    }
-  };
-
   const handlePrint = () => {
-    if (!fileUrl) return;
-    const win = window.open();
-    if (win) {
-      if (isPdf) {
-        win.document.write(
-          `<iframe src="${fileUrl}" frameborder="0" style="border:0; width:100%; height:100%;" onload="window.print()"></iframe>`
-        );
-      } else {
-        win.document.write(`
-          <html>
-            <head><title>Print Certificate - ${recipientName}</title></head>
-            <body style="margin:0; display:flex; justify-content:center; align-items:center;">
-              <img src="${fileUrl}" style="max-width:100%; max-height:100vh; object-fit:contain;" onload="window.print();" />
-            </body>
-          </html>
-        `);
+    if (viewMode === 'scan' && fileUrl) {
+      const win = window.open();
+      if (win) {
+        if (isPdf) {
+          win.document.write(
+            `<iframe src="${fileUrl}" frameborder="0" style="border:0; width:100%; height:100%;" onload="window.print()"></iframe>`
+          );
+        } else {
+          win.document.write(`
+            <html>
+              <head><title>Print Certificate - ${recipientName}</title></head>
+              <body style="margin:0; background:#fff; display:flex; justify-content:center; align-items:center; min-height:100vh;">
+                <img src="${fileUrl}" style="max-width:96%; max-height:96vh; object-fit:contain;" onload="window.print();" />
+              </body>
+            </html>
+          `);
+        }
       }
+    } else {
+      handleDownloadOfficialPDF();
     }
   };
 
@@ -126,9 +134,11 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
 
     try {
       setIsUploading(true);
-      const compressed = await compressImageFile(file, 1200, 0.8);
+      const compressed = await compressImageFile(file, 1200, 0.82);
       if (compressed) {
         setCurrentFile(compressed);
+        setViewMode('scan');
+        setImageLoadError(false);
         setUploadSuccess(true);
         setTimeout(() => setUploadSuccess(false), 4000);
 
@@ -139,7 +149,7 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
       }
     } catch (err) {
       console.error("Certificate document attachment failed:", err);
-      alert("Could not process file. Please upload an image or PDF.");
+      alert("Could not process file. Please upload a standard image or PDF.");
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -161,7 +171,7 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
         className={`modal-content ${isFullscreen ? 'modal-fullscreen' : 'modal-xl'}`}
         onClick={(e) => e.stopPropagation()}
         style={{
-          maxWidth: isFullscreen ? '98vw' : '960px',
+          maxWidth: isFullscreen ? '98vw' : '1020px',
           width: '95vw',
           maxHeight: isFullscreen ? '98vh' : '92vh',
           display: 'flex',
@@ -174,7 +184,7 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
         }}
       >
         {/* Modal Header */}
-        <div className="modal-header" style={{ borderBottom: '1px solid var(--border-light)', padding: '1rem 1.5rem', background: '#FAFAFC' }}>
+        <div className="modal-header" style={{ borderBottom: '1px solid var(--border-light)', padding: '0.85rem 1.5rem', background: '#FAFAFC' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: 0 }}>
             <div style={{
               width: 36,
@@ -227,7 +237,7 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
           </div>
         </div>
 
-        {/* Certificate Metadata Bar */}
+        {/* Certificate Metadata & View Switcher Bar */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -240,6 +250,7 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
           fontSize: '0.8rem',
           color: 'var(--text-secondary)'
         }}>
+          {/* Metadata chips */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
             <div>
               <span style={{ color: 'var(--text-muted)' }}>Credential ID: </span>
@@ -257,13 +268,52 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
             )}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            {hasUploadedFile && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-teal)', fontWeight: 600, fontSize: '0.78rem' }}>
-                <FileText size={14} />
-                <span>{fileName} {fileSize ? `(${fileSize})` : ''}</span>
-              </div>
-            )}
+          {/* View Mode Toggle & Upload Button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', background: '#E2E8F0', padding: '2px', borderRadius: '6px' }}>
+              <button
+                type="button"
+                onClick={() => setViewMode('official')}
+                style={{
+                  padding: '0.25rem 0.65rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  borderRadius: '4px',
+                  border: 'none',
+                  background: viewMode === 'official' ? '#FFFFFF' : 'transparent',
+                  color: viewMode === 'official' ? 'var(--primary)' : 'var(--text-secondary)',
+                  boxShadow: viewMode === 'official' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.3rem'
+                }}
+              >
+                <Scroll size={13} /> Official Credential
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setViewMode('scan')}
+                style={{
+                  padding: '0.25rem 0.65rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  borderRadius: '4px',
+                  border: 'none',
+                  background: viewMode === 'scan' ? '#FFFFFF' : 'transparent',
+                  color: viewMode === 'scan' ? 'var(--secondary)' : 'var(--text-secondary)',
+                  boxShadow: viewMode === 'scan' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.3rem'
+                }}
+              >
+                <Layers size={13} /> Attached Scan {currentFile ? `(${fileName.slice(0, 14)}...)` : ''}
+              </button>
+            </div>
+
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
@@ -273,7 +323,7 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
               {isUploading ? (
                 <><Loader2 size={13} className="spin-animate" /> Saving to DB...</>
               ) : (
-                <><UploadCloud size={13} /> {hasUploadedFile ? 'Replace Document' : 'Attach Scan'}</>
+                <><UploadCloud size={13} /> {currentFile ? 'Replace Scan' : 'Attach Scan'}</>
               )}
             </button>
           </div>
@@ -282,128 +332,319 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
         {/* Certificate Display Area */}
         <div className="modal-body" style={{
           padding: '1.25rem',
-          background: '#0B1120',
+          background: '#0F172A',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           overflow: 'auto',
           flex: 1,
-          minHeight: isFullscreen ? '78vh' : '480px',
-          maxHeight: isFullscreen ? '85vh' : '65vh',
+          minHeight: isFullscreen ? '78vh' : '520px',
+          maxHeight: isFullscreen ? '85vh' : '68vh',
           position: 'relative'
         }}>
-          {hasUploadedFile ? (
-            isPdf ? (
-              /* PDF Certificate Viewer */
-              <div style={{ width: '100%', height: '100%', minHeight: '520px', borderRadius: '8px', overflow: 'hidden', background: '#FFFFFF' }}>
-                <iframe
-                  src={fileUrl}
-                  title={`Certificate - ${certificateTitle}`}
-                  style={{ width: '100%', height: '100%', minHeight: '520px', border: 'none' }}
-                />
-              </div>
-            ) : (
-              /* Image Certificate Viewer */
-              <div style={{
+          {viewMode === 'official' ? (
+            /* OFFICIAL INSTITUTIONAL ACCREDITED CERTIFICATE DOCUMENT */
+            <div
+              style={{
                 width: '100%',
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'auto',
-                padding: '0.5rem'
-              }}>
-                <img
-                  src={fileUrl}
-                  alt={`Official Certificate for ${recipientName} - ${certificateTitle}`}
-                  style={{
-                    maxWidth: '100%',
-                    maxHeight: isFullscreen ? '78vh' : '58vh',
-                    objectFit: 'contain',
-                    transform: `scale(${zoomLevel}) rotate(${rotation}deg)`,
-                    transformOrigin: 'center center',
-                    transition: 'transform 0.2s ease',
-                    borderRadius: '8px',
-                    boxShadow: '0 12px 36px rgba(0, 0, 0, 0.6)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)'
-                  }}
-                />
-              </div>
-            )
-          ) : (
-            /* Empty State if No File was Uploaded */
-            <div style={{
-              textAlign: 'center',
-              padding: '2.5rem 2rem',
-              color: '#94A3B8',
-              maxWidth: '520px',
-              background: '#1E293B',
-              borderRadius: '14px',
-              border: '1px solid #334155',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
-            }}>
+                maxWidth: '860px',
+                background: '#FFFFFF',
+                borderRadius: '12px',
+                border: '4px solid #1E293B',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+                padding: '2.5rem 3rem',
+                position: 'relative',
+                boxSizing: 'border-box',
+                color: '#0F172A',
+                textAlign: 'center',
+                overflow: 'hidden'
+              }}
+            >
+              {/* Inner Gold Inset Border */}
               <div style={{
-                width: 56,
-                height: 56,
-                borderRadius: '50%',
-                background: '#334155',
-                color: '#CBD5E1',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                position: 'absolute',
+                top: '10px',
+                left: '10px',
+                right: '10px',
+                bottom: '10px',
+                border: '1.5px solid #D97706',
+                borderRadius: '8px',
+                pointerEvents: 'none'
+              }}></div>
+
+              {/* Corner Dots */}
+              <div style={{ position: 'absolute', top: 8, left: 8, width: 8, height: 8, background: '#4F46E5', borderRadius: '50%' }}></div>
+              <div style={{ position: 'absolute', top: 8, right: 8, width: 8, height: 8, background: '#4F46E5', borderRadius: '50%' }}></div>
+              <div style={{ position: 'absolute', bottom: 8, left: 8, width: 8, height: 8, background: '#4F46E5', borderRadius: '50%' }}></div>
+              <div style={{ position: 'absolute', bottom: 8, right: 8, width: 8, height: 8, background: '#4F46E5', borderRadius: '50%' }}></div>
+
+              {/* Header Badge */}
+              <div style={{
+                display: 'inline-block',
+                background: '#F5F3FF',
+                border: '1px solid #DDD6FE',
+                borderRadius: '20px',
+                padding: '0.35rem 1.25rem',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                color: '#4F46E5',
+                letterSpacing: '0.08em',
                 marginBottom: '1rem'
               }}>
-                <FileQuestion size={28} />
+                INSTITUTIONAL QUANTUM COMPUTING NETWORK & Q-HUB
               </div>
-              <h4 style={{ color: '#F8FAFC', fontSize: '1.2rem', marginBottom: '0.5rem', fontWeight: 700 }}>
-                No Scanned Document Attached
-              </h4>
-              <p style={{ fontSize: '0.88rem', color: '#94A3B8', lineHeight: 1.5, marginBottom: '1.25rem' }}>
-                This record is registered with verified credential metadata (<strong style={{ color: '#E2E8F0' }}>{credentialId}</strong>). You can attach the real certificate image or PDF scan below to store it in Supabase DB permanently.
-              </p>
 
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-                className="btn btn-primary"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.7rem 1.4rem',
-                  fontWeight: 600,
-                  fontSize: '0.9rem',
-                  marginBottom: '1.5rem',
-                  boxShadow: '0 4px 14px rgba(79, 70, 229, 0.4)'
-                }}
-              >
-                {isUploading ? (
-                  <><Loader2 size={18} className="spin-animate" /> Processing & Saving to DB...</>
-                ) : (
-                  <><UploadCloud size={18} /> Upload Certificate Document (Image / PDF)</>
-                )}
-              </button>
-
-              <div style={{
-                background: '#0F172A',
-                borderRadius: '8px',
-                padding: '0.85rem 1rem',
-                fontSize: '0.8rem',
-                color: '#CBD5E1',
-                textAlign: 'left',
-                border: '1px solid #334155'
+              <h2 style={{
+                fontFamily: 'Georgia, serif',
+                fontSize: '1.9rem',
+                fontWeight: 800,
+                color: '#0F172A',
+                margin: '0.25rem 0',
+                letterSpacing: '0.04em'
               }}>
-                <div><strong>Recipient:</strong> {recipientName} ({recipientRole})</div>
-                <div style={{ marginTop: '0.25rem' }}><strong>Certificate:</strong> {certificateTitle}</div>
-                <div style={{ marginTop: '0.25rem' }}><strong>Issuer:</strong> {issuer}</div>
-                <div style={{ marginTop: '0.25rem' }}><strong>Date:</strong> {issueDate} • <strong>Grade:</strong> {grade}</div>
+                CERTIFICATE OF ACHIEVEMENT
+              </h2>
+
+              <div style={{ fontSize: '0.85rem', color: '#64748B', letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: '0.25rem' }}>
+                This official credential is proudly conferred upon
+              </div>
+
+              {/* Candidate Name */}
+              <div style={{
+                fontSize: '1.85rem',
+                fontWeight: 800,
+                color: '#4338CA',
+                margin: '1rem 0 0.25rem',
+                fontFamily: 'Georgia, serif',
+                borderBottom: '2px solid #E0E7FF',
+                display: 'inline-block',
+                padding: '0 2rem 0.25rem'
+              }}>
+                {recipientName}
+              </div>
+
+              <div style={{ fontSize: '0.88rem', color: '#475569', maxWidth: '640px', margin: '0.75rem auto', lineHeight: 1.5 }}>
+                as a recognized <strong>{recipientRole}</strong>, in formal recognition of successfully completing the curriculum, examination, and laboratory benchmarks for:
+              </div>
+
+              {/* Certificate / Course Title Card */}
+              <div style={{
+                background: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                borderRadius: '10px',
+                padding: '0.85rem 1.5rem',
+                margin: '1rem auto',
+                maxWidth: '680px'
+              }}>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A' }}>
+                  {certificateTitle}
+                </div>
+                <div style={{ fontSize: '0.85rem', color: '#64748B', marginTop: '0.2rem' }}>
+                  Accredited & Issued by: <strong style={{ color: '#334155' }}>{issuer}</strong>
+                </div>
+              </div>
+
+              {/* Honors Badge */}
+              {grade && (
+                <div style={{
+                  display: 'inline-block',
+                  background: '#DCFCE7',
+                  border: '1px solid #86EFAC',
+                  borderRadius: '20px',
+                  padding: '0.3rem 1.1rem',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  color: '#166534',
+                  marginBottom: '1rem'
+                }}>
+                  Honors & Distinction: {grade}
+                </div>
+              )}
+
+              {/* Verification Metadata Strip */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '0.5rem',
+                background: '#F1F5F9',
+                borderRadius: '6px',
+                padding: '0.5rem 1rem',
+                fontSize: '0.78rem',
+                color: '#475569',
+                maxWidth: '680px',
+                margin: '0 auto 1.5rem'
+              }}>
+                <div><strong>Credential ID:</strong> <span style={{ fontFamily: 'monospace', color: '#4338CA' }}>{credentialId}</span></div>
+                <div><strong>Issue Date:</strong> {issueDate}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#166534', fontWeight: 600 }}>
+                  <ShieldCheck size={14} /> Cryptographically Verified
+                </div>
+              </div>
+
+              {/* Dual Signatures & Gold Seal */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-end',
+                maxWidth: '680px',
+                margin: '0 auto',
+                paddingTop: '0.5rem'
+              }}>
+                {/* Dean Signature */}
+                <div style={{ textAlign: 'center', width: '180px' }}>
+                  <div style={{ borderBottom: '1px solid #94A3B8', paddingBottom: '0.25rem', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '0.95rem', color: '#0F172A' }}>
+                    Dr. A. Ramachandran
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: '0.2rem', fontWeight: 600 }}>
+                    Dean of Quantum Science
+                  </div>
+                </div>
+
+                {/* Verified Gold Seal */}
+                <div style={{
+                  width: 54,
+                  height: 54,
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #FDE68A 0%, #D97706 100%)',
+                  border: '2px solid #B45309',
+                  boxShadow: '0 4px 12px rgba(217, 119, 6, 0.4)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#78350F',
+                  fontWeight: 900,
+                  fontSize: '0.55rem',
+                  lineHeight: 1.1,
+                  textAlign: 'center'
+                }}>
+                  <span>Q-HUB</span>
+                  <span>SEAL</span>
+                  <span>VERIFIED</span>
+                </div>
+
+                {/* Academic Director Signature */}
+                <div style={{ textAlign: 'center', width: '180px' }}>
+                  <div style={{ borderBottom: '1px solid #94A3B8', paddingBottom: '0.25rem', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '0.95rem', color: '#0F172A' }}>
+                    Prof. Elena Rostova
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: '0.2rem', fontWeight: 600 }}>
+                    Quantum Academic Council
+                  </div>
+                </div>
               </div>
             </div>
+          ) : (
+            /* ATTACHED SCAN / PHYSICAL DOCUMENT VIEWER */
+            hasUploadedFile ? (
+              isPdf ? (
+                /* PDF Viewer */
+                <div style={{ width: '100%', height: '100%', minHeight: '520px', borderRadius: '8px', overflow: 'hidden', background: '#FFFFFF' }}>
+                  <iframe
+                    src={fileUrl}
+                    title={`Certificate Scan - ${certificateTitle}`}
+                    style={{ width: '100%', height: '100%', minHeight: '520px', border: 'none' }}
+                  />
+                </div>
+              ) : (
+                /* Image Scan Viewer with Solid White Card Backing */
+                <div style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'auto',
+                  padding: '1rem'
+                }}>
+                  <div style={{
+                    background: '#FFFFFF',
+                    padding: '8px',
+                    borderRadius: '10px',
+                    boxShadow: '0 15px 40px rgba(0,0,0,0.6)',
+                    maxWidth: '100%',
+                    maxHeight: isFullscreen ? '78vh' : '60vh',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <img
+                      src={fileUrl}
+                      alt={`Certificate Scan for ${recipientName}`}
+                      onError={() => setImageLoadError(true)}
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: isFullscreen ? '74vh' : '56vh',
+                        objectFit: 'contain',
+                        transform: `scale(${zoomLevel}) rotate(${rotation}deg)`,
+                        transformOrigin: 'center center',
+                        transition: 'transform 0.2s ease',
+                        borderRadius: '6px'
+                      }}
+                    />
+                  </div>
+                </div>
+              )
+            ) : (
+              /* No Scan Attached or Image Error */
+              <div style={{
+                textAlign: 'center',
+                padding: '2.5rem 2rem',
+                color: '#94A3B8',
+                maxWidth: '520px',
+                background: '#1E293B',
+                borderRadius: '14px',
+                border: '1px solid #334155',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
+              }}>
+                <div style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: '50%',
+                  background: '#334155',
+                  color: '#CBD5E1',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '1rem'
+                }}>
+                  <FileQuestion size={28} />
+                </div>
+                <h4 style={{ color: '#F8FAFC', fontSize: '1.2rem', marginBottom: '0.5rem', fontWeight: 700 }}>
+                  No Physical Document Scan Attached
+                </h4>
+                <p style={{ fontSize: '0.88rem', color: '#94A3B8', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+                  This record is registered with verified credential metadata (<strong style={{ color: '#E2E8F0' }}>{credentialId}</strong>). You can view the Official Accredited Credential, or upload your physical scan below.
+                </p>
+
+                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => setViewMode('official')}
+                    className="btn btn-primary"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+                  >
+                    <Scroll size={16} /> View Official Credential
+                  </button>
+
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="btn btn-outline"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: '#F8FAFC', borderColor: '#475569' }}
+                  >
+                    {isUploading ? <Loader2 size={16} className="spin-animate" /> : <UploadCloud size={16} />}
+                    Upload Scan (Image / PDF)
+                  </button>
+                </div>
+              </div>
+            )
           )}
 
-          {/* Floating Image Controls for Image Certificates */}
-          {hasUploadedFile && !isPdf && (
+          {/* Floating Controls for Image Scans */}
+          {viewMode === 'scan' && hasUploadedFile && !isPdf && (
             <div style={{
               position: 'absolute',
               bottom: '1.25rem',
@@ -412,7 +653,7 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
               display: 'flex',
               alignItems: 'center',
               gap: '0.4rem',
-              background: 'rgba(15, 23, 42, 0.85)',
+              background: 'rgba(15, 23, 42, 0.9)',
               backdropFilter: 'blur(8px)',
               padding: '0.35rem 0.75rem',
               borderRadius: '9999px',
@@ -464,45 +705,36 @@ export const CertificateModal = ({ isOpen, onClose, certData, onAttachDocument }
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-            {hasUploadedFile ? (
-              <>
-                <button
-                  className="btn btn-outline"
-                  onClick={handlePrint}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
-                >
-                  <Printer size={15} /> Print
-                </button>
-                <button
-                  className="btn btn-outline"
-                  onClick={handleOpenInNewTab}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-teal)', borderColor: '#99F6E4', background: '#F0FDFA' }}
-                >
-                  <ExternalLink size={15} /> Open in New Tab
-                </button>
-                <button
-                  className="btn btn-primary"
-                  onClick={handleDownloadFile}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
-                >
-                  <Download size={15} /> Download Real Certificate
-                </button>
-              </>
-            ) : (
+            <button
+              className="btn btn-outline"
+              onClick={handlePrint}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+            >
+              <Printer size={15} /> Print
+            </button>
+
+            {hasUploadedFile && viewMode === 'scan' && (
               <button
-                className="btn btn-primary"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+                className="btn btn-outline"
+                onClick={handleDownloadScanFile}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-teal)', borderColor: '#99F6E4', background: '#F0FDFA' }}
               >
-                {isUploading ? <Loader2 size={15} className="spin-animate" /> : <UploadCloud size={15} />}
-                Upload Document Now
+                <Download size={15} /> Download Attached Scan
               </button>
             )}
+
+            <button
+              className="btn btn-primary"
+              onClick={handleDownloadOfficialPDF}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+            >
+              <Download size={15} /> Download Official PDF Certificate
+            </button>
           </div>
         </div>
       </div>
     </div>
   );
 };
+
 

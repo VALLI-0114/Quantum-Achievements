@@ -2,9 +2,10 @@
  * Image Compression Utility
  * Resizes and compresses image files into lightweight Base64/data URLs
  * (~30-70KB max) to ensure fast, reliable Supabase cloud storage without payload bottlenecks.
+ * Always fills white background to ensure transparent PNGs and scans never turn black.
  */
 
-export const compressImageFile = (file, maxWidth = 1000, quality = 0.75) => {
+export const compressImageFile = (file, maxWidth = 1200, quality = 0.82) => {
   return new Promise((resolve, reject) => {
     if (!file) {
       return resolve(null);
@@ -17,7 +18,7 @@ export const compressImageFile = (file, maxWidth = 1000, quality = 0.75) => {
         resolve({
           name: file.name,
           size: (file.size / 1024).toFixed(1) + ' KB',
-          type: file.type,
+          type: file.type || 'application/pdf',
           dataUrl: e.target.result
         });
       };
@@ -34,8 +35,8 @@ export const compressImageFile = (file, maxWidth = 1000, quality = 0.75) => {
     };
 
     img.onload = () => {
-      let width = img.width;
-      let height = img.height;
+      let width = img.naturalWidth || img.width;
+      let height = img.naturalHeight || img.height;
 
       // Calculate proportional dimensions
       if (width > maxWidth) {
@@ -57,6 +58,11 @@ export const compressImageFile = (file, maxWidth = 1000, quality = 0.75) => {
         });
       }
 
+      // Fill clean solid white background so transparent PNGs and scans never turn black
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, width, height);
+
+      // Draw the image onto the canvas
       ctx.drawImage(img, 0, 0, width, height);
 
       // Export as JPEG with quality compression
@@ -87,6 +93,7 @@ export const compressImageFile = (file, maxWidth = 1000, quality = 0.75) => {
       basicReader.readAsDataURL(file);
     };
 
+    reader.onerror = (err) => reject(err);
     reader.readAsDataURL(file);
   });
 };

@@ -48,7 +48,7 @@ export const AddAchievementModal = ({
 
   // 1. Course State
   const [courseForm, setCourseForm] = useState({
-    code: 'QC-205',
+    code: '',
     name: '',
     provider: 'IBM Quantum Network & Q-HUB',
     category: 'Quantum Algorithms',
@@ -294,7 +294,7 @@ export const AddAchievementModal = ({
       const newCourseId = `CRS-${Date.now().toString().slice(-4)}`;
       const newCourse = {
         id: newCourseId,
-        code: courseForm.code || 'QC-101',
+        code: (courseForm.code && courseForm.code.trim()) ? courseForm.code.trim() : (courseForm.name ? `${courseForm.name.split(' ').map(w => w[0]).join('').slice(0, 4).toUpperCase() || 'QC'}-${Math.floor(100 + Math.random() * 900)}` : 'QC-101'),
         name: courseForm.name,
         provider: courseForm.provider,
         category: courseForm.category,
@@ -532,7 +532,7 @@ export const AddAchievementModal = ({
 
     // Reset forms for clean next entry
     setCourseForm({
-      code: 'QC-205',
+      code: '',
       name: '',
       provider: 'IBM Quantum Network & Q-HUB',
       category: 'Quantum Algorithms',
@@ -681,14 +681,13 @@ export const AddAchievementModal = ({
               <>
                 <div className="form-grid-2">
                   <div className="form-group">
-                    <label className="form-label">Course Code</label>
+                    <label className="form-label">Course Code <span style={{ fontSize: '0.75rem', fontWeight: 'normal', color: 'var(--text-muted)' }}>(Optional)</span></label>
                     <input
                       type="text"
                       className="form-input"
                       value={courseForm.code}
                       onChange={(e) => setCourseForm({ ...courseForm, code: e.target.value })}
-                      placeholder="e.g. QC-305"
-                      required
+                      placeholder="e.g. QC-305 (Optional)"
                     />
                   </div>
                   <div className="form-group">

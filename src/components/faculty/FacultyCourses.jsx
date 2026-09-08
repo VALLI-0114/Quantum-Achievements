@@ -305,7 +305,7 @@ export const FacultyCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }
                           credentialId: item.certificateId || `QHUB-FAC-${idx + 101}`,
                           issueDate: item.completionDate,
                           grade: item.grade || "Distinction",
-                          uploadedFile: item.uploadedFile
+                          uploadedFile: item.uploadedFile || selectedCourse.uploadedFile
                         })}
                       >
                         <Award size={14} /> View Certificate

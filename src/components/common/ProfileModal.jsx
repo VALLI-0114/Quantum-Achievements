@@ -24,13 +24,14 @@ export const ProfileModal = ({ isOpen, onClose, personId, roleType = 'student', 
     }
   }).map(c => {
     const record = isFaculty
-      ? c.facultyCompletions.find(fc => fc.facultyId === person.id)
-      : c.studentCompletions.find(sc => sc.studentId === person.id);
+      ? c.facultyCompletions?.find(fc => fc.facultyId === person.id)
+      : c.studentCompletions?.find(sc => sc.studentId === person.id);
     return {
       ...c,
       completionDate: record?.completionDate || '2025-01-01',
       grade: record?.grade || 'Distinction',
-      certificateId: record?.certificateId || 'QHUB-CERT-01'
+      certificateId: record?.certificateId || 'QHUB-CERT-01',
+      uploadedFile: record?.uploadedFile || c.uploadedFile || null
     };
   });
 
@@ -43,13 +44,14 @@ export const ProfileModal = ({ isOpen, onClose, personId, roleType = 'student', 
     }
   }).map(cert => {
     const record = isFaculty
-      ? cert.facultyRecipients.find(fr => fr.facultyId === person.id)
-      : cert.studentRecipients.find(sr => sr.studentId === person.id);
+      ? cert.facultyRecipients?.find(fr => fr.facultyId === person.id)
+      : cert.studentRecipients?.find(sr => sr.studentId === person.id);
     return {
       ...cert,
       issueDate: record?.issueDate || '2025-01-01',
       credentialId: record?.credentialId || 'QHUB-CRED-01',
-      score: record?.score || 'Distinction'
+      score: record?.score || 'Distinction',
+      uploadedFile: record?.uploadedFile || cert.uploadedFile || null
     };
   });
 
@@ -251,7 +253,8 @@ export const ProfileModal = ({ isOpen, onClose, personId, roleType = 'student', 
                           issuer: c.provider,
                           credentialId: c.certificateId,
                           issueDate: c.completionDate,
-                          grade: c.grade
+                          grade: c.grade,
+                          uploadedFile: c.uploadedFile
                         })}
                       >
                         <Award size={14} /> View Certificate
@@ -296,7 +299,8 @@ export const ProfileModal = ({ isOpen, onClose, personId, roleType = 'student', 
                         issuer: cert.issuer,
                         credentialId: cert.credentialId,
                         issueDate: cert.issueDate,
-                        grade: cert.score
+                        grade: cert.score,
+                        uploadedFile: cert.uploadedFile
                       })}
                     >
                       <Award size={14} /> View Certificate

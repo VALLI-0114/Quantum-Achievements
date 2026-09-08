@@ -253,7 +253,7 @@ export const FacultyCertificates = ({ onOpenCertificate, onOpenProfile, onAddCer
                           credentialId: item.credentialId,
                           issueDate: item.issueDate,
                           grade: item.score || "Distinction",
-                          uploadedFile: item.uploadedFile
+                          uploadedFile: item.uploadedFile || selectedCert.uploadedFile
                         })}
                       >
                         <Award size={14} /> View Certificate

@@ -1,189 +1,398 @@
-import React from 'react';
-import { X, Download, Award, ShieldCheck, CheckCircle2, FileText, ExternalLink } from 'lucide-react';
-import { downloadCertificatePDF } from '../../utils/pdfGenerator';
+import React, { useState } from 'react';
+import {
+  X,
+  Download,
+  Award,
+  ShieldCheck,
+  FileText,
+  ExternalLink,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  Maximize2,
+  Minimize2,
+  Printer,
+  FileQuestion
+} from 'lucide-react';
 
 export const CertificateModal = ({ isOpen, onClose, certData }) => {
   if (!isOpen || !certData) return null;
 
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
   const {
     recipientName = "Candidate",
-    recipientRole = "Student Candidate",
-    certificateTitle = "Quantum Developer Certification",
-    issuer = "IBM Quantum & Q-HUB",
-    credentialId = "QHUB-CERT-001",
-    issueDate = "2025-05-10",
+    recipientRole = "Faculty Member",
+    certificateTitle = "Quantum Certification",
+    issuer = "Accredited Institution",
+    credentialId = "QHUB-CERT",
+    issueDate = new Date().toISOString().slice(0, 10),
     grade = "Distinction",
     uploadedFile = null
   } = certData;
 
-  const handleDownloadPDF = () => {
-    downloadCertificatePDF({
-      recipientName,
-      recipientRole,
-      certificateTitle,
-      issuer,
-      credentialId,
-      issueDate,
-      grade
-    });
+  const fileObj = uploadedFile || certData.fileData || certData.document || null;
+  const fileUrl = typeof fileObj === 'string' ? fileObj : (fileObj?.dataUrl || fileObj?.url || null);
+  const fileName = (typeof fileObj === 'object' && fileObj?.name) ? fileObj.name : 'Certificate_Document';
+  const fileSize = (typeof fileObj === 'object' && fileObj?.size) ? fileObj.size : '';
+  const fileType = (typeof fileObj === 'object' && fileObj?.type) ? fileObj.type : '';
+
+  const isPdf = fileType.includes('pdf') || (typeof fileUrl === 'string' && fileUrl.startsWith('data:application/pdf')) || fileName.toLowerCase().endsWith('.pdf');
+  const hasUploadedFile = Boolean(fileUrl);
+
+  const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.25, 2.5));
+  const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.25, 0.5));
+  const handleResetZoom = () => {
+    setZoomLevel(1);
+    setRotation(0);
+  };
+  const handleRotate = () => setRotation(prev => (prev + 90) % 360);
+
+  const handleDownloadFile = () => {
+    if (!fileUrl) return;
+    const link = document.createElement('a');
+    link.href = fileUrl;
+    link.download = fileName || `${recipientName.replace(/\s+/g, '_')}_Certificate.${isPdf ? 'pdf' : 'jpg'}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-  const handleOpenUploadedFile = () => {
-    if (!uploadedFile?.dataUrl) return;
+  const handleOpenInNewTab = () => {
+    if (!fileUrl) return;
     const win = window.open();
     if (win) {
-      win.document.write(
-        `<iframe src="${uploadedFile.dataUrl}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`
-      );
+      if (isPdf) {
+        win.document.write(
+          `<iframe src="${fileUrl}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`
+        );
+      } else {
+        win.document.write(
+          `<body style="margin:0; background:#0b0f19; display:flex; justify-content:center; align-items:center; min-height:100vh;">
+            <img src="${fileUrl}" style="max-width:98%; max-height:98vh; object-fit:contain; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 8px;" alt="Certificate" />
+          </body>`
+        );
+      }
+      win.document.title = `${recipientName} - ${certificateTitle}`;
+    }
+  };
+
+  const handlePrint = () => {
+    if (!fileUrl) return;
+    const win = window.open();
+    if (win) {
+      if (isPdf) {
+        win.document.write(
+          `<iframe src="${fileUrl}" frameborder="0" style="border:0; width:100%; height:100%;" onload="window.print()"></iframe>`
+        );
+      } else {
+        win.document.write(`
+          <html>
+            <head><title>Print Certificate - ${recipientName}</title></head>
+            <body style="margin:0; display:flex; justify-content:center; align-items:center;">
+              <img src="${fileUrl}" style="max-width:100%; max-height:100vh; object-fit:contain;" onload="window.print();" />
+            </body>
+          </html>
+        `);
+      }
     }
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content modal-lg" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <Award style={{ color: 'var(--primary)', width: 22, height: 22 }} />
-            <h3>Official Quantum Certificate of Achievement</h3>
+    <div className={`modal-overlay ${isFullscreen ? 'fullscreen-overlay' : ''}`} onClick={onClose} style={{ zIndex: 1100 }}>
+      <div
+        className={`modal-content ${isFullscreen ? 'modal-fullscreen' : 'modal-xl'}`}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          maxWidth: isFullscreen ? '98vw' : '960px',
+          width: '95vw',
+          maxHeight: isFullscreen ? '98vh' : '92vh',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)',
+          borderRadius: isFullscreen ? '8px' : '16px',
+          border: '1px solid var(--border-light)',
+          background: '#FFFFFF',
+          overflow: 'hidden'
+        }}
+      >
+        {/* Modal Header */}
+        <div className="modal-header" style={{ borderBottom: '1px solid var(--border-light)', padding: '1rem 1.5rem', background: '#FAFAFC' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: 0 }}>
+            <div style={{
+              width: 36,
+              height: 36,
+              borderRadius: '8px',
+              background: '#F5F3FF',
+              color: 'var(--secondary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              <Award size={20} />
+            </div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {recipientName}
+                </h3>
+                <span className="metric-pill secondary" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}>
+                  {recipientRole}
+                </span>
+                <span className="metric-pill success" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <ShieldCheck size={12} /> Verified Credential
+                </span>
+              </div>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.15rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {certificateTitle} • <strong style={{ color: 'var(--text-primary)' }}>{issuer}</strong>
+              </div>
+            </div>
           </div>
-          <button className="modal-close-btn" onClick={onClose}>
-            <X size={20} />
-          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <button
+              className="btn-icon"
+              onClick={() => setIsFullscreen(!isFullscreen)}
+              title={isFullscreen ? "Exit Fullscreen" : "Fullscreen View"}
+              style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid var(--border-light)' }}
+            >
+              {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </button>
+            <button className="modal-close-btn" onClick={onClose} style={{ marginLeft: '0.25rem' }}>
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
-        <div className="modal-body" style={{ background: '#FAF5FF', padding: '2rem' }}>
-          {/* Certificate Visual Presentation */}
-          <div style={{
-            background: '#FFFFFF',
-            border: '8px double #7C3AED',
-            borderRadius: '12px',
-            padding: '2.5rem 2rem',
-            textAlign: 'center',
-            boxShadow: 'var(--shadow-lg)',
-            position: 'relative'
-          }}>
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              background: '#F5F3FF',
-              color: '#7C3AED',
-              padding: '0.3rem 0.85rem',
-              borderRadius: '9999px',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              marginBottom: '1rem'
-            }}>
-              <ShieldCheck size={16} /> Verified Institutional Credential
+        {/* Certificate Metadata Bar */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+          padding: '0.65rem 1.5rem',
+          background: '#F8FAFC',
+          borderBottom: '1px solid var(--border-light)',
+          fontSize: '0.8rem',
+          color: 'var(--text-secondary)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
+            <div>
+              <span style={{ color: 'var(--text-muted)' }}>Credential ID: </span>
+              <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--primary)' }}>{credentialId}</span>
             </div>
-
-            <h1 style={{
-              fontFamily: 'serif',
-              fontSize: '1.85rem',
-              color: 'var(--text-primary)',
-              marginBottom: '0.5rem',
-              letterSpacing: '0.02em'
-            }}>
-              Quantum Achievement Certificate
-            </h1>
-
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
-              This certifies that
-            </p>
-
-            <h2 style={{
-              fontSize: '1.75rem',
-              color: 'var(--primary)',
-              fontWeight: 800,
-              margin: '0.25rem 0 0.5rem'
-            }}>
-              {recipientName}
-            </h2>
-
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontStyle: 'italic', marginBottom: '1.25rem' }}>
-              {recipientRole}
+            <div>
+              <span style={{ color: 'var(--text-muted)' }}>Issue Date: </span>
+              <span style={{ fontWeight: 600 }}>{issueDate}</span>
             </div>
-
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', maxWidth: '580px', margin: '0 auto 0.75rem' }}>
-              has successfully achieved and demonstrated verified mastery in:
-            </p>
-
-            <div style={{
-              fontSize: '1.2rem',
-              fontWeight: 700,
-              color: '#7C3AED',
-              background: '#FAF5FF',
-              padding: '0.75rem 1.25rem',
-              borderRadius: '8px',
-              display: 'inline-block',
-              margin: '0.5rem 0 1.25rem',
-              border: '1px solid #DDD6FE'
-            }}>
-              {certificateTitle}
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              <div>Issuer: <strong>{issuer}</strong></div>
-              <div>Grade: <strong style={{ color: 'var(--primary)' }}>{grade}</strong></div>
-            </div>
-
-            {uploadedFile && (
-              <div style={{
-                marginTop: '1.25rem',
-                padding: '0.65rem 1rem',
-                background: '#F0FDFA',
-                border: '1px solid #99F6E4',
-                borderRadius: '8px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontSize: '0.82rem',
-                color: 'var(--accent-teal)'
-              }}>
-                <FileText size={15} /> Attached File: <strong>{uploadedFile.name}</strong> ({uploadedFile.size})
+            {grade && (
+              <div>
+                <span style={{ color: 'var(--text-muted)' }}>Grade: </span>
+                <span style={{ fontWeight: 700, color: 'var(--secondary)' }}>{grade}</span>
               </div>
             )}
-
-            <div style={{
-              marginTop: '2rem',
-              paddingTop: '1.25rem',
-              borderTop: '1px solid var(--border-light)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'flex-end',
-              fontSize: '0.75rem',
-              color: 'var(--text-muted)'
-            }}>
-              <div style={{ textAlign: 'left', fontFamily: 'monospace' }}>
-                <div>ISSUE DATE: {issueDate}</div>
-                <div>CREDENTIAL ID: {credentialId}</div>
-                <div style={{ color: 'var(--accent-teal)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.2rem' }}>
-                  <CheckCircle2 size={12} /> SHA256 Cryptographically Audited
-                </div>
-              </div>
-
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Q-HUB Academic Council</div>
-                <div style={{ fontStyle: 'italic' }}>Institutional Center of Quantum Excellence</div>
-              </div>
-            </div>
           </div>
+
+          {hasUploadedFile && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-teal)', fontWeight: 600, fontSize: '0.78rem' }}>
+              <FileText size={14} />
+              <span>{fileName} {fileSize ? `(${fileSize})` : ''}</span>
+            </div>
+          )}
         </div>
 
-        <div className="modal-footer">
+        {/* Certificate Display Area */}
+        <div className="modal-body" style={{
+          padding: '1.25rem',
+          background: '#0B1120',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'auto',
+          flex: 1,
+          minHeight: isFullscreen ? '78vh' : '480px',
+          maxHeight: isFullscreen ? '85vh' : '65vh',
+          position: 'relative'
+        }}>
+          {hasUploadedFile ? (
+            isPdf ? (
+              /* PDF Certificate Viewer */
+              <div style={{ width: '100%', height: '100%', minHeight: '520px', borderRadius: '8px', overflow: 'hidden', background: '#FFFFFF' }}>
+                <iframe
+                  src={fileUrl}
+                  title={`Certificate - ${certificateTitle}`}
+                  style={{ width: '100%', height: '100%', minHeight: '520px', border: 'none' }}
+                />
+              </div>
+            ) : (
+              /* Image Certificate Viewer */
+              <div style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'auto',
+                padding: '0.5rem'
+              }}>
+                <img
+                  src={fileUrl}
+                  alt={`Official Certificate for ${recipientName} - ${certificateTitle}`}
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: isFullscreen ? '78vh' : '58vh',
+                    objectFit: 'contain',
+                    transform: `scale(${zoomLevel}) rotate(${rotation}deg)`,
+                    transformOrigin: 'center center',
+                    transition: 'transform 0.2s ease',
+                    borderRadius: '8px',
+                    boxShadow: '0 12px 36px rgba(0, 0, 0, 0.6)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)'
+                  }}
+                />
+              </div>
+            )
+          ) : (
+            /* Empty State if No File was Uploaded */
+            <div style={{
+              textAlign: 'center',
+              padding: '3rem 2rem',
+              color: '#94A3B8',
+              maxWidth: '520px',
+              background: '#1E293B',
+              borderRadius: '14px',
+              border: '1px solid #334155',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
+            }}>
+              <div style={{
+                width: 56,
+                height: 56,
+                borderRadius: '50%',
+                background: '#334155',
+                color: '#CBD5E1',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '1rem'
+              }}>
+                <FileQuestion size={28} />
+              </div>
+              <h4 style={{ color: '#F8FAFC', fontSize: '1.2rem', marginBottom: '0.5rem', fontWeight: 700 }}>
+                No Scanned Document Attached
+              </h4>
+              <p style={{ fontSize: '0.88rem', color: '#94A3B8', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+                This record was registered with verified credential metadata (<strong style={{ color: '#E2E8F0' }}>{credentialId}</strong>), but no physical image or PDF document scan was uploaded during entry.
+              </p>
+              <div style={{
+                background: '#0F172A',
+                borderRadius: '8px',
+                padding: '0.85rem 1rem',
+                fontSize: '0.8rem',
+                color: '#CBD5E1',
+                textAlign: 'left',
+                border: '1px solid #334155'
+              }}>
+                <div><strong>Recipient:</strong> {recipientName} ({recipientRole})</div>
+                <div style={{ marginTop: '0.25rem' }}><strong>Certificate:</strong> {certificateTitle}</div>
+                <div style={{ marginTop: '0.25rem' }}><strong>Issuer:</strong> {issuer}</div>
+                <div style={{ marginTop: '0.25rem' }}><strong>Date:</strong> {issueDate} • <strong>Grade:</strong> {grade}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Floating Image Controls for Image Certificates */}
+          {hasUploadedFile && !isPdf && (
+            <div style={{
+              position: 'absolute',
+              bottom: '1.25rem',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              background: 'rgba(15, 23, 42, 0.85)',
+              backdropFilter: 'blur(8px)',
+              padding: '0.35rem 0.75rem',
+              borderRadius: '9999px',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              boxShadow: '0 8px 20px rgba(0,0,0,0.4)',
+              zIndex: 10
+            }}>
+              <button
+                onClick={handleZoomIn}
+                style={{ background: 'transparent', border: 'none', color: '#F8FAFC', cursor: 'pointer', padding: '0.3rem', display: 'flex', alignItems: 'center' }}
+                title="Zoom In"
+              >
+                <ZoomIn size={16} />
+              </button>
+              <span style={{ color: '#94A3B8', fontSize: '0.75rem', minWidth: '42px', textAlign: 'center', fontFamily: 'monospace' }}>
+                {Math.round(zoomLevel * 100)}%
+              </span>
+              <button
+                onClick={handleZoomOut}
+                style={{ background: 'transparent', border: 'none', color: '#F8FAFC', cursor: 'pointer', padding: '0.3rem', display: 'flex', alignItems: 'center' }}
+                title="Zoom Out"
+              >
+                <ZoomOut size={16} />
+              </button>
+              <div style={{ width: '1px', height: '14px', background: 'rgba(255,255,255,0.2)', margin: '0 0.2rem' }}></div>
+              <button
+                onClick={handleRotate}
+                style={{ background: 'transparent', border: 'none', color: '#F8FAFC', cursor: 'pointer', padding: '0.3rem', display: 'flex', alignItems: 'center' }}
+                title="Rotate 90°"
+              >
+                <RotateCw size={16} />
+              </button>
+              {(zoomLevel !== 1 || rotation !== 0) && (
+                <button
+                  onClick={handleResetZoom}
+                  style={{ background: '#334155', border: 'none', color: '#F8FAFC', cursor: 'pointer', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.7rem' }}
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Modal Footer */}
+        <div className="modal-footer" style={{ borderTop: '1px solid var(--border-light)', padding: '0.85rem 1.5rem', background: '#FAFAFC', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
           <button className="btn btn-outline" onClick={onClose}>
             Close
           </button>
-          {uploadedFile && (
-            <button className="btn btn-outline" onClick={handleOpenUploadedFile} style={{ color: 'var(--accent-teal)', borderColor: '#99F6E4', background: '#F0FDFA' }}>
-              <ExternalLink size={15} /> View Attached File ({uploadedFile.name.slice(0, 18)}...)
-            </button>
-          )}
-          <button className="btn btn-primary" onClick={handleDownloadPDF}>
-            <Download size={16} /> Download Certificate PDF
-          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+            {hasUploadedFile && (
+              <>
+                <button
+                  className="btn btn-outline"
+                  onClick={handlePrint}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+                >
+                  <Printer size={15} /> Print
+                </button>
+                <button
+                  className="btn btn-outline"
+                  onClick={handleOpenInNewTab}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-teal)', borderColor: '#99F6E4', background: '#F0FDFA' }}
+                >
+                  <ExternalLink size={15} /> Open in New Tab
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleDownloadFile}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+                >
+                  <Download size={15} /> Download Real Certificate
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

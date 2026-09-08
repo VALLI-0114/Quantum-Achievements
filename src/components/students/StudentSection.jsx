@@ -28,9 +28,9 @@ export const StudentSection = ({ onOpenCertificate, onOpenProfile, onOpenAddModa
       {/* Page Header */}
       <div className="page-header">
         <div className="page-title-group">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-            <span className="metric-pill primary">Section 2</span>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Undergraduate & Graduate Scholars</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+            <span className="metric-pill primary" style={{ fontWeight: 700 }}>Section 2</span>
+            <span style={{ fontSize: '0.88rem', color: '#1E293B', fontWeight: 600 }}>Undergraduate & Graduate Scholars</span>
           </div>
           <h1>Student Quantum Contributions & Completed Courses</h1>
           <p>
@@ -43,7 +43,7 @@ export const StudentSection = ({ onOpenCertificate, onOpenProfile, onOpenAddModa
             className="btn btn-outline"
             onClick={handleDownloadAllStudentReport}
             title="Download complete PDF report of all student achievements"
-            style={{ fontWeight: 600, borderColor: '#BFDBFE', color: 'var(--primary)', background: '#EFF6FF' }}
+            style={{ fontWeight: 700, borderColor: '#93C5FD', color: '#1E40AF', background: '#EFF6FF' }}
           >
             <FileDown size={15} /> Export All Student Data (PDF)
           </button>

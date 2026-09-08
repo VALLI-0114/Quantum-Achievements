@@ -28,9 +28,9 @@ export const FacultySection = ({ onOpenCertificate, onOpenProfile, onOpenAddModa
       {/* Page Header */}
       <div className="page-header">
         <div className="page-title-group">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-            <span className="metric-pill secondary">Section 1</span>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Institutional Research & Faculty Core</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+            <span className="metric-pill secondary" style={{ fontWeight: 700 }}>Section 1</span>
+            <span style={{ fontSize: '0.88rem', color: '#1E293B', fontWeight: 600 }}>Institutional Research & Faculty Core</span>
           </div>
           <h1>Faculty Quantum Contributions & Research</h1>
           <p>
@@ -43,7 +43,7 @@ export const FacultySection = ({ onOpenCertificate, onOpenProfile, onOpenAddModa
             className="btn btn-outline"
             onClick={handleDownloadAllFacultyReport}
             title="Download complete PDF report of all faculty achievements"
-            style={{ fontWeight: 600, borderColor: '#DDD6FE', color: 'var(--secondary)', background: '#F5F3FF' }}
+            style={{ fontWeight: 700, borderColor: '#C4B5FD', color: '#5B21B6', background: '#F5F3FF' }}
           >
             <FileDown size={15} /> Export All Faculty Data (PDF)
           </button>

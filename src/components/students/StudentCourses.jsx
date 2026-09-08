@@ -173,7 +173,7 @@ export const StudentCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }
                 width: 44,
                 height: 44,
                 borderRadius: '10px',
-                background: '#EFF6FF',
+                background: 'var(--primary-light)',
                 color: 'var(--primary)',
                 display: 'flex',
                 alignItems: 'center',

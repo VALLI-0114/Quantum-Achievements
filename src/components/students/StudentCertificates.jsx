@@ -139,7 +139,7 @@ export const StudentCertificates = ({ onOpenCertificate, onOpenProfile, onAddCer
               width: 44,
               height: 44,
               borderRadius: '10px',
-              background: '#EFF6FF',
+              background: 'var(--primary-light)',
               color: 'var(--primary)',
               display: 'flex',
               alignItems: 'center',

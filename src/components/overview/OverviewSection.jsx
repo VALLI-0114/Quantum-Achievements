@@ -66,14 +66,14 @@ export const OverviewSection = ({ onNavigate }) => {
             display: 'inline-flex',
             alignItems: 'center',
             gap: '0.4rem',
-            background: '#EFF6FF',
+            background: 'var(--primary-light)',
             color: 'var(--primary)',
             padding: '0.35rem 0.85rem',
             borderRadius: '9999px',
             fontSize: '0.78rem',
             fontWeight: 700,
             marginBottom: '1rem',
-            border: '1px solid #BFDBFE'
+            border: '1px solid var(--primary-border)'
           }}>
             <Sparkles size={14} /> Quantum Contributions Portal
           </div>

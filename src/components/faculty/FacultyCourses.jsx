@@ -188,7 +188,7 @@ export const FacultyCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }
                 width: 44,
                 height: 44,
                 borderRadius: '10px',
-                background: '#EFF6FF',
+                background: 'var(--primary-light)',
                 color: 'var(--primary)',
                 display: 'flex',
                 alignItems: 'center',
@@ -360,8 +360,8 @@ export const FacultyCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }
         {/* Faculty Currently Enrolled / In Progress */}
         {enrolledFacultyList.length > 0 && (
           <div style={{
-            background: '#EFF6FF',
-            border: '1px solid #BFDBFE',
+            background: 'var(--primary-light)',
+            border: '1px solid var(--primary-border)',
             borderRadius: '12px',
             padding: '1.25rem 1.5rem'
           }}>
@@ -372,7 +372,7 @@ export const FacultyCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }
               {enrolledFacultyList.map((enr, i) => (
                 <div key={i} style={{
                   background: '#FFFFFF',
-                  border: '1px solid #DBEAFE',
+                  border: '1px solid var(--primary-border)',
                   borderRadius: '8px',
                   padding: '0.65rem 1rem',
                   display: 'flex',

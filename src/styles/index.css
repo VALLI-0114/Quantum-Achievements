@@ -3,16 +3,16 @@
    ========================================================================== */
 
 :root {
-  /* Color Palette */
+  /* Color Palette - Wine & Pure White Theme */
   --bg-main: #FFFFFF;
   --bg-surface: #FFFFFF;
   --bg-surface-subtle: #F8FAFC;
   --bg-surface-hover: #F1F5F9;
   
-  --primary: #2563EB;           /* Deep Royal Blue */
-  --primary-deep: #1D4ED8;
-  --primary-light: #EFF6FF;
-  --primary-border: #BFDBFE;
+  --primary: #722F37;           /* Signature Wine / Burgundy */
+  --primary-deep: #581C26;      /* Deep Rich Burgundy */
+  --primary-light: #FDF2F4;     /* Soft Wine Tint */
+  --primary-border: #F8B4C4;    /* Subtle Wine Border */
 
   --secondary: #722F37;         /* Elegant Wine / Burgundy */
   --secondary-deep: #581C26;
@@ -38,7 +38,7 @@
 
   --border-light: #E2E8F0;
   --border-subtle: #CBD5E1;
-  --border-accent: #93C5FD;
+  --border-accent: #F8B4C4;
 
   /* Shadows */
   --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
@@ -161,7 +161,7 @@ body {
   font-family: var(--font-heading);
   font-weight: 800;
   font-size: 1.2rem;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 2px 8px rgba(114, 47, 55, 0.3);
 }
 
 .brand-title {
@@ -450,7 +450,7 @@ body {
 .category-tab-btn.active {
   background: var(--primary);
   color: #FFFFFF;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 2px 6px rgba(114, 47, 55, 0.25);
 }
 
 .category-tab-btn.active.purple {
@@ -781,12 +781,12 @@ body {
 .btn-primary {
   background: var(--primary);
   color: #FFFFFF;
-  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 2px 4px rgba(114, 47, 55, 0.2);
 }
 
 .btn-primary:hover {
   background: var(--primary-deep);
-  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 8px rgba(114, 47, 55, 0.3);
 }
 
 .btn-secondary {
@@ -959,7 +959,7 @@ body {
   background: var(--primary);
   color: #FFFFFF;
   border-color: var(--primary);
-  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 2px 4px rgba(114, 47, 55, 0.2);
 }
 
 .modal-tab-btn.active.purple {
@@ -1064,7 +1064,7 @@ body {
 
 .form-input:focus, .form-select:focus, .form-textarea:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 3px rgba(114, 47, 55, 0.1);
 }
 
 .form-grid-2 {

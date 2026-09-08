@@ -192,7 +192,7 @@ export const ProfileModal = ({ isOpen, onClose, personId, roleType = 'student', 
             gap: '0.75rem',
             marginBottom: '1.75rem'
           }}>
-            <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '10px', padding: '0.75rem', textAlign: 'center' }}>
+            <div style={{ background: 'var(--primary-light)', border: '1px solid var(--primary-border)', borderRadius: '10px', padding: '0.75rem', textAlign: 'center' }}>
               <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--primary)' }}>{personCourses.length}</div>
               <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Courses Completed</div>
             </div>

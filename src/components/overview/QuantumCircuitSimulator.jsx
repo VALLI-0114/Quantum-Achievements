@@ -139,8 +139,8 @@ export const QuantumCircuitSimulator = () => {
 
       {/* State Vector Output */}
       <div style={{
-        background: '#EFF6FF',
-        border: '1px solid #BFDBFE',
+        background: 'var(--primary-light)',
+        border: '1px solid var(--primary-border)',
         borderRadius: '8px',
         padding: '0.75rem 1rem',
         display: 'flex',

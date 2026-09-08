@@ -76,7 +76,7 @@ export const OverviewSection = ({ onNavigate }) => {
             marginBottom: '1rem',
             border: '1px solid #BFDBFE'
           }}>
-            <Sparkles size={14} /> Official Quantum Achievements & DBMS Portal
+            <Sparkles size={14} /> Official Quantum Contributions & DBMS Portal
           </div>
 
           <h1 style={{
@@ -94,7 +94,7 @@ export const OverviewSection = ({ onNavigate }) => {
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent'
             }}>
-              Research. Innovation.
+              Research. Contributions.
             </span>
           </h1>
 
@@ -104,18 +104,18 @@ export const OverviewSection = ({ onNavigate }) => {
             lineHeight: 1.6,
             marginBottom: '2rem'
           }}>
-            Centralized institutional repository to explore quantum achievements across Faculty & Students.
+            Centralized institutional repository to explore quantum contributions across Faculty & Students.
             Explore completed courses, accredited industry certifications, research projects, publications, and competitive hackathons with full participant rosters and PDF dossiers.
           </p>
 
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             <button className="btn btn-secondary btn-lg" onClick={() => onNavigate('faculty')} style={{ padding: '0.75rem 1.5rem', fontSize: '0.95rem' }}>
-              <Users size={18} /> Faculty Achievements
+              <Users size={18} /> Faculty Contributions
               <ArrowRight size={16} />
             </button>
 
             <button className="btn btn-primary btn-lg" onClick={() => onNavigate('student')} style={{ padding: '0.75rem 1.5rem', fontSize: '0.95rem' }}>
-              <GraduationCap size={18} /> Student Achievements
+              <GraduationCap size={18} /> Student Contributions
               <ArrowRight size={16} />
             </button>
           </div>

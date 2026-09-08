@@ -32,9 +32,9 @@ export const StudentSection = ({ onOpenCertificate, onOpenProfile, onOpenAddModa
             <span className="metric-pill primary">Section 2</span>
             <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Undergraduate & Graduate Scholars</span>
           </div>
-          <h1>Student Quantum Achievements & Completed Courses</h1>
+          <h1>Student Quantum Contributions & Completed Courses</h1>
           <p>
-            Explore quantum-related achievements of student candidates across completed courses, accredited industry certifications, projects, research papers, and hackathons.
+            Explore quantum-related contributions of student candidates across completed courses, accredited industry certifications, projects, research papers, and hackathons.
           </p>
         </div>
 

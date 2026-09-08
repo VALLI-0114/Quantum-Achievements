@@ -13,8 +13,8 @@ import {
 export const Sidebar = ({ activeView, onViewChange, isOpen, onClose }) => {
   const navItems = [
     { id: 'home', label: 'Overview', icon: LayoutDashboard },
-    { id: 'faculty', label: 'Faculty Achievements', icon: Users, badge: 'DBMS', badgeColor: 'secondary' },
-    { id: 'student', label: 'Student Achievements', icon: GraduationCap, badge: 'DBMS', badgeColor: 'primary' },
+    { id: 'faculty', label: 'Faculty Contributions', icon: Users, badge: 'DBMS', badgeColor: 'secondary' },
+    { id: 'student', label: 'Student Contributions', icon: GraduationCap, badge: 'DBMS', badgeColor: 'primary' },
     { id: 'projects', label: 'Quantum Projects', icon: Layers },
     { id: 'research', label: 'Research Publications', icon: FileText },
     { id: 'certificates', label: 'Certificates Gallery', icon: Award },
@@ -29,7 +29,7 @@ export const Sidebar = ({ activeView, onViewChange, isOpen, onClose }) => {
           <div className="brand-icon">Q</div>
           <div className="brand-text">
             <span className="brand-title">Q-<span>HUB</span></span>
-            <span className="brand-subtitle">Quantum Achievements</span>
+            <span className="brand-subtitle">Quantum Contributions</span>
           </div>
         </div>
       </div>

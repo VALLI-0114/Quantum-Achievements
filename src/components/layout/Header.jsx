@@ -85,7 +85,7 @@ export const Header = ({ onOpenSearch, onOpenAddModal, onToggleSidebar }) => {
           {/* Global Search Input Trigger */}
           <div className="global-search-bar" onClick={onOpenSearch}>
             <Search size={16} />
-            <span className="search-placeholder">Search student & faculty achievements, courses, hackathons...</span>
+            <span className="search-placeholder">Search student & faculty contributions, courses, hackathons...</span>
             <span className="search-kbd">Ctrl K</span>
           </div>
         </div>

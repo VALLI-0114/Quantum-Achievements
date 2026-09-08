@@ -32,9 +32,9 @@ export const FacultySection = ({ onOpenCertificate, onOpenProfile, onOpenAddModa
             <span className="metric-pill secondary">Section 1</span>
             <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Institutional Research & Faculty Core</span>
           </div>
-          <h1>Faculty Quantum Achievements & Research</h1>
+          <h1>Faculty Quantum Contributions & Research</h1>
           <p>
-            Explore quantum-related achievements of faculty members across verified courses, accredited certifications, projects, research publications, and hackathons.
+            Explore quantum-related contributions of faculty members across verified courses, accredited certifications, projects, research publications, and hackathons.
           </p>
         </div>
 

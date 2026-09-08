@@ -119,8 +119,7 @@ export const QuantumDBProvider = ({ children }) => {
                   completion_date: fc.completionDate || new Date().toISOString().slice(0, 10),
                   grade: fc.grade || 'Distinction',
                   certificate_id: fc.certificateId || '',
-                  status: 'Completed',
-                  uploaded_file: serializeFile(fc.uploadedFile || c.uploadedFile)
+                  status: 'Completed'
                 });
               });
             } else {
@@ -136,8 +135,7 @@ export const QuantumDBProvider = ({ children }) => {
                 completion_date: '',
                 grade: 'Available',
                 certificate_id: '',
-                status: 'Available',
-                uploaded_file: serializeFile(c.uploadedFile)
+                status: 'Available'
               });
             }
           }
@@ -157,8 +155,7 @@ export const QuantumDBProvider = ({ children }) => {
                   completion_date: sc.completionDate || new Date().toISOString().slice(0, 10),
                   grade: sc.grade || 'Distinction',
                   certificate_id: sc.certificateId || '',
-                  status: 'Completed',
-                  uploaded_file: serializeFile(sc.uploadedFile || c.uploadedFile)
+                  status: 'Completed'
                 });
               });
             } else {
@@ -174,8 +171,7 @@ export const QuantumDBProvider = ({ children }) => {
                 completion_date: '',
                 grade: 'Available',
                 certificate_id: '',
-                status: 'Available',
-                uploaded_file: serializeFile(c.uploadedFile)
+                status: 'Available'
               });
             }
           }
@@ -207,8 +203,7 @@ export const QuantumDBProvider = ({ children }) => {
                   credential_id: fr.credentialId || '',
                   issue_date: fr.issueDate || new Date().toISOString().slice(0, 10),
                   score: fr.score || 'Distinction',
-                  verification_url: c.verificationUrl || '',
-                  uploaded_file: serializeFile(fr.uploadedFile || c.uploadedFile)
+                  verification_url: c.verificationUrl || ''
                 });
               });
             } else {
@@ -222,8 +217,7 @@ export const QuantumDBProvider = ({ children }) => {
                 credential_id: '',
                 issue_date: '',
                 score: '',
-                verification_url: c.verificationUrl || '',
-                uploaded_file: serializeFile(c.uploadedFile)
+                verification_url: c.verificationUrl || ''
               });
             }
           }
@@ -241,8 +235,7 @@ export const QuantumDBProvider = ({ children }) => {
                   credential_id: sr.credentialId || '',
                   issue_date: sr.issueDate || new Date().toISOString().slice(0, 10),
                   score: sr.score || 'Distinction',
-                  verification_url: c.verificationUrl || '',
-                  uploaded_file: serializeFile(sr.uploadedFile || c.uploadedFile)
+                  verification_url: c.verificationUrl || ''
                 });
               });
             } else {
@@ -256,8 +249,7 @@ export const QuantumDBProvider = ({ children }) => {
                 credential_id: '',
                 issue_date: '',
                 score: '',
-                verification_url: c.verificationUrl || '',
-                uploaded_file: serializeFile(c.uploadedFile)
+                verification_url: c.verificationUrl || ''
               });
             }
           }
@@ -288,8 +280,7 @@ export const QuantumDBProvider = ({ children }) => {
               github_url: p.githubUrl || '',
               faculty_name: facLead.facultyName || 'Faculty PI',
               faculty_id: facLead.facultyId || '',
-              role: facLead.role || 'Principal Investigator',
-              uploaded_file: serializeFile(p.uploadedFile)
+              role: facLead.role || 'Principal Investigator'
             });
           }
 
@@ -305,8 +296,7 @@ export const QuantumDBProvider = ({ children }) => {
               github_url: p.githubUrl || '',
               student_name: stuLead.studentName || 'Student Lead',
               student_id: stuLead.studentId || '',
-              role: stuLead.role || 'Project Lead & Developer',
-              uploaded_file: serializeFile(p.uploadedFile)
+              role: stuLead.role || 'Project Lead & Developer'
             });
           }
         });
@@ -332,11 +322,10 @@ export const QuantumDBProvider = ({ children }) => {
               doi: rp.doi || '',
               research_area: rp.researchArea || rp.research_area || 'Quantum Computing',
               abstract: rp.abstract || '',
-              citations: rp.citations || 0,
+              citations: Number(rp.citations) || 0,
               date: rp.date || '',
               faculty_name: (rp.facultyAuthors || []).join(', ') || 'Faculty Author',
-              faculty_id: (rp.facultyAuthors || [])[0] || '',
-              uploaded_file: serializeFile(rp.uploadedFile)
+              faculty_id: (rp.facultyAuthors || [])[0] || ''
             });
           }
 
@@ -348,11 +337,10 @@ export const QuantumDBProvider = ({ children }) => {
               doi: rp.doi || '',
               research_area: rp.researchArea || rp.research_area || 'Quantum Computing',
               abstract: rp.abstract || '',
-              citations: rp.citations || 0,
+              citations: Number(rp.citations) || 0,
               date: rp.date || '',
               student_name: (rp.studentAuthors || []).join(', ') || 'Student Author',
-              student_id: (rp.studentAuthors || [])[0] || '',
-              uploaded_file: serializeFile(rp.uploadedFile)
+              student_id: (rp.studentAuthors || [])[0] || ''
             });
           }
         });
@@ -382,8 +370,7 @@ export const QuantumDBProvider = ({ children }) => {
               faculty_id: facP.facultyId || '',
               team_name: facP.teamName || 'Faculty Team',
               project_built: facP.projectBuilt || '',
-              award: facP.award || 'Winner',
-              uploaded_file: serializeFile(facP.uploadedFile || h.uploadedFile)
+              award: facP.award || 'Winner'
             });
           }
 
@@ -399,8 +386,7 @@ export const QuantumDBProvider = ({ children }) => {
               student_id: stuP.studentId || '',
               team_name: stuP.teamName || 'Student Team',
               project_built: stuP.projectBuilt || '',
-              award: stuP.award || 'Winner',
-              uploaded_file: serializeFile(stuP.uploadedFile || h.uploadedFile)
+              award: stuP.award || 'Winner'
             });
           }
         });

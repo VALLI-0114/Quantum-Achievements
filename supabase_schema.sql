@@ -14,6 +14,14 @@
 -- ==============================================================================
 
 -- ==============================================================================
+-- QUICK MIGRATION TO ADD team_members COLUMN (Run if tables already exist)
+-- ==============================================================================
+ALTER TABLE public.student_projects ADD COLUMN IF NOT EXISTS team_members TEXT;
+ALTER TABLE public.faculty_projects ADD COLUMN IF NOT EXISTS team_members TEXT;
+ALTER TABLE public.student_hackathons ADD COLUMN IF NOT EXISTS team_members TEXT;
+ALTER TABLE public.faculty_hackathons ADD COLUMN IF NOT EXISTS team_members TEXT;
+
+-- ==============================================================================
 -- STEP 1: DROP UNNECESSARY GENERIC TABLES
 -- ==============================================================================
 DROP TABLE IF EXISTS public.courses CASCADE;
@@ -83,6 +91,7 @@ CREATE TABLE IF NOT EXISTS public.faculty_projects (
     faculty_name TEXT,
     faculty_id TEXT,
     role TEXT DEFAULT 'Principal Investigator / Research Advisor',
+    team_members TEXT,
     uploaded_file TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -113,6 +122,7 @@ CREATE TABLE IF NOT EXISTS public.faculty_hackathons (
     faculty_name TEXT,
     faculty_id TEXT,
     team_name TEXT,
+    team_members TEXT,
     project_built TEXT,
     award TEXT DEFAULT 'Participant',
     uploaded_file TEXT,
@@ -181,6 +191,7 @@ CREATE TABLE IF NOT EXISTS public.student_projects (
     student_name TEXT,
     student_id TEXT,
     role TEXT DEFAULT 'Project Lead & Developer',
+    team_members TEXT,
     uploaded_file TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -211,6 +222,7 @@ CREATE TABLE IF NOT EXISTS public.student_hackathons (
     student_name TEXT,
     student_id TEXT,
     team_name TEXT,
+    team_members TEXT,
     project_built TEXT,
     award TEXT DEFAULT 'Participant',
     uploaded_file TEXT,

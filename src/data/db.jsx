@@ -374,6 +374,9 @@ export const QuantumDBProvider = ({ children }) => {
         const stuProjRows = [];
 
         stateToSave.projects.forEach(p => {
+          const allFacultyNames = (p.facultyInvolved || []).map(f => f.facultyName || f.name).filter(Boolean).join(', ');
+          const allStudentNames = (p.studentsInvolved || []).map(s => s.studentName || s.name).filter(Boolean).join(', ');
+
           if (p.facultyInvolved && p.facultyInvolved.length > 0) {
             p.facultyInvolved.forEach((facLead, idx) => {
               facProjRows.push({
@@ -386,7 +389,8 @@ export const QuantumDBProvider = ({ children }) => {
                 github_url: p.githubUrl || '',
                 faculty_name: facLead.facultyName || facLead.name || 'Faculty PI',
                 faculty_id: facLead.facultyId || facLead.id || '',
-                role: facLead.role || 'Principal Investigator'
+                role: facLead.role || 'Principal Investigator',
+                team_members: allFacultyNames || facLead.facultyName || facLead.name || ''
               });
             });
           } else if (p.targetAudience === 'faculty') {
@@ -400,7 +404,8 @@ export const QuantumDBProvider = ({ children }) => {
               github_url: p.githubUrl || '',
               faculty_name: '',
               faculty_id: '',
-              role: ''
+              role: '',
+              team_members: allFacultyNames || ''
             });
           }
 
@@ -416,7 +421,8 @@ export const QuantumDBProvider = ({ children }) => {
                 github_url: p.githubUrl || '',
                 student_name: stuLead.studentName || stuLead.name || 'Student Lead',
                 student_id: stuLead.studentId || stuLead.id || '',
-                role: stuLead.role || 'Project Developer'
+                role: stuLead.role || 'Project Developer',
+                team_members: allStudentNames || stuLead.studentName || stuLead.name || ''
               });
             });
           } else if (p.targetAudience === 'students' || p.targetAudience === 'student') {
@@ -430,7 +436,8 @@ export const QuantumDBProvider = ({ children }) => {
               github_url: p.githubUrl || '',
               student_name: '',
               student_id: '',
-              role: ''
+              role: '',
+              team_members: allStudentNames || ''
             });
           }
         });
@@ -491,6 +498,8 @@ export const QuantumDBProvider = ({ children }) => {
         stateToSave.hackathons.forEach(h => {
           const isFaculty = h.targetAudience === 'faculty' || (!h.targetAudience && h.facultyParticipants && h.facultyParticipants.length > 0 && (!h.studentParticipants || h.studentParticipants.length === 0));
           const isStudent = h.targetAudience === 'students' || h.targetAudience === 'student' || (!h.targetAudience && h.studentParticipants && h.studentParticipants.length > 0);
+          const allHckStuNames = (h.studentParticipants || []).map(s => s.studentName || s.name).filter(Boolean).join(', ');
+          const allHckFacNames = (h.facultyParticipants || []).map(f => f.facultyName || f.name).filter(Boolean).join(', ');
 
           if (isFaculty) {
             if (h.facultyParticipants && h.facultyParticipants.length > 0) {
@@ -504,6 +513,7 @@ export const QuantumDBProvider = ({ children }) => {
                   faculty_name: facP.facultyName || facP.name || 'Faculty Mentor',
                   faculty_id: facP.facultyId || '',
                   team_name: facP.teamName || 'Faculty Team',
+                  team_members: allHckFacNames || facP.facultyName || facP.name || '',
                   project_built: facP.projectBuilt || '',
                   award: facP.award || 'Winner'
                 });
@@ -518,6 +528,7 @@ export const QuantumDBProvider = ({ children }) => {
                 faculty_name: '',
                 faculty_id: '',
                 team_name: '',
+                team_members: allHckFacNames || '',
                 project_built: '',
                 award: 'Winner'
               });
@@ -536,6 +547,7 @@ export const QuantumDBProvider = ({ children }) => {
                   student_name: stuP.studentName || stuP.name || 'Student Member',
                   student_id: stuP.studentId || '',
                   team_name: stuP.teamName || 'Student Team',
+                  team_members: allHckStuNames || stuP.studentName || stuP.name || '',
                   project_built: stuP.projectBuilt || '',
                   award: stuP.award || 'Winner'
                 });
@@ -550,6 +562,7 @@ export const QuantumDBProvider = ({ children }) => {
                 student_name: '',
                 student_id: '',
                 team_name: '',
+                team_members: allHckStuNames || '',
                 project_built: '',
                 award: 'Winner'
               });

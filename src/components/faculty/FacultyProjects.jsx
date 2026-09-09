@@ -281,7 +281,11 @@ export const FacultyProjects = ({ onOpenProfile, onAddProject }) => {
                           confirmDelete({
                             title: `Remove ${item.faculty.name}`,
                             message: `Remove ${item.faculty.name} from this project?`,
-                            onConfirm: () => removeProjectParticipant(selectedProject.id, 'faculty', item.facultyId || item.faculty.id)
+                            onConfirm: () => removeProjectParticipant(
+                              selectedProject.id,
+                              'faculty',
+                              item.facultyId || item.faculty?.id || item.faculty?.facultyId || item.faculty?.name
+                            )
                           });
                         }}
                       >
@@ -372,7 +376,11 @@ export const FacultyProjects = ({ onOpenProfile, onAddProject }) => {
                           confirmDelete({
                             title: `Remove ${item.student.name}`,
                             message: `Remove ${item.student.name} from this project?`,
-                            onConfirm: () => removeProjectParticipant(selectedProject.id, 'students', item.studentId || item.student.id)
+                            onConfirm: () => removeProjectParticipant(
+                              selectedProject.id,
+                              'student',
+                              item.studentId || item.student?.id || item.student?.studentId || item.student?.name
+                            )
                           });
                         }}
                       >

@@ -24,8 +24,20 @@ export const AddTeammateModal = ({
     e.preventDefault();
 
     if (selectedPersonId) {
+      const existingPerson = roleType === 'student'
+        ? students.find(s => s.id === selectedPersonId)
+        : faculty.find(f => f.id === selectedPersonId);
+
       addProjectParticipant(projectId, roleType, selectedPersonId, {
-        role: projectRole || (roleType === 'student' ? 'Quantum Developer' : 'Faculty Advisor')
+        studentId: roleType === 'student' ? (existingPerson?.studentId || existingPerson?.id || selectedPersonId) : undefined,
+        id: selectedPersonId,
+        facultyId: roleType === 'faculty' ? (existingPerson?.id || selectedPersonId) : undefined,
+        studentName: existingPerson?.name || '',
+        facultyName: existingPerson?.name || '',
+        name: existingPerson?.name || '',
+        department: existingPerson?.department || department,
+        role: projectRole || (roleType === 'student' ? 'Quantum Developer' : 'Faculty Advisor'),
+        roll: existingPerson?.studentId || existingPerson?.id
       });
       onClose();
       return;
@@ -41,7 +53,7 @@ export const AddTeammateModal = ({
     const personData = {
       id: newId,
       name: cleanName,
-      department: department || (roleType === 'student' ? 'Computer Science & Engineering' : 'Physics & Quantum Science'),
+      department: department || (roleType === 'student' ? 'Information Technology' : 'Physics & Quantum Computing'),
       studentId: roleType === 'student' ? (extraInfo || `QU-${Math.floor(1000 + Math.random() * 9000)}`) : undefined,
       title: roleType === 'faculty' ? (extraInfo || 'Faculty Advisor') : undefined,
       avatar: cleanName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
@@ -52,10 +64,15 @@ export const AddTeammateModal = ({
       roleType,
       newId,
       {
-        role: projectRole || (roleType === 'student' ? 'Quantum Developer' : 'Faculty Advisor'),
+        studentId: personData.studentId || newId,
+        id: newId,
+        facultyId: roleType === 'faculty' ? newId : undefined,
         studentName: cleanName,
         facultyName: cleanName,
-        department: department
+        name: cleanName,
+        department: personData.department,
+        role: projectRole || (roleType === 'student' ? 'Quantum Developer' : 'Faculty Advisor'),
+        roll: personData.studentId
       },
       personData
     );

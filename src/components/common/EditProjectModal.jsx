@@ -65,14 +65,14 @@ export const EditProjectModal = ({
   const handleRemoveStudent = (studentId) => {
     setFormData(prev => ({
       ...prev,
-      studentsInvolved: prev.studentsInvolved.filter(s => String(s.studentId || s) !== String(studentId))
+      studentsInvolved: prev.studentsInvolved.filter(s => String(s.studentId || s.id || s.name || s) !== String(studentId))
     }));
   };
 
   const handleRemoveFaculty = (facultyId) => {
     setFormData(prev => ({
       ...prev,
-      facultyInvolved: prev.facultyInvolved.filter(f => String(f.facultyId || f) !== String(facultyId))
+      facultyInvolved: prev.facultyInvolved.filter(f => String(f.facultyId || f.id || f.name || f) !== String(facultyId))
     }));
   };
 
@@ -80,7 +80,7 @@ export const EditProjectModal = ({
     setFormData(prev => ({
       ...prev,
       studentsInvolved: prev.studentsInvolved.map(s => {
-        if (String(s.studentId || s) === String(studentId)) {
+        if (String(s.studentId || s.id || s.name || s) === String(studentId)) {
           return typeof s === 'object' ? { ...s, role: newRole } : { studentId: s, role: newRole };
         }
         return s;
@@ -92,7 +92,7 @@ export const EditProjectModal = ({
     setFormData(prev => ({
       ...prev,
       facultyInvolved: prev.facultyInvolved.map(f => {
-        if (String(f.facultyId || f) === String(facultyId)) {
+        if (String(f.facultyId || f.id || f.name || f) === String(facultyId)) {
           return typeof f === 'object' ? { ...f, role: newRole } : { facultyId: f, role: newRole };
         }
         return f;
@@ -103,7 +103,7 @@ export const EditProjectModal = ({
   const handleAddMemberToForm = () => {
     if (newMemberType === 'student') {
       if (selectedExistingId) {
-        const alreadyIn = formData.studentsInvolved.some(s => String(s.studentId || s) === String(selectedExistingId));
+        const alreadyIn = formData.studentsInvolved.some(s => String(s.studentId || s.id || s) === String(selectedExistingId));
         if (!alreadyIn) {
           const sObj = students.find(s => s.id === selectedExistingId);
           setFormData(prev => ({
@@ -112,7 +112,9 @@ export const EditProjectModal = ({
               ...prev.studentsInvolved,
               {
                 studentId: selectedExistingId,
+                id: selectedExistingId,
                 studentName: sObj?.name || '',
+                name: sObj?.name || '',
                 department: sObj?.department || '',
                 role: newMemberRole || 'Quantum Developer'
               }
@@ -124,7 +126,7 @@ export const EditProjectModal = ({
         const cleanName = newMemberName.trim();
         const existing = students.find(s => s.name.toLowerCase() === cleanName.toLowerCase());
         if (existing) {
-          const alreadyIn = formData.studentsInvolved.some(s => String(s.studentId || s) === String(existing.id));
+          const alreadyIn = formData.studentsInvolved.some(s => String(s.studentId || s.id || s.name || s) === String(existing.id));
           if (!alreadyIn) {
             setFormData(prev => ({
               ...prev,
@@ -132,7 +134,9 @@ export const EditProjectModal = ({
                 ...prev.studentsInvolved,
                 {
                   studentId: existing.id,
+                  id: existing.id,
                   studentName: existing.name,
+                  name: existing.name,
                   department: existing.department,
                   role: newMemberRole || 'Quantum Developer'
                 }
@@ -144,7 +148,7 @@ export const EditProjectModal = ({
           const newStu = {
             id: newStuId,
             name: cleanName,
-            department: newMemberDept || 'Computer Science & Engineering',
+            department: newMemberDept || 'Information Technology',
             studentId: newMemberExtra || `QU-${Math.floor(1000 + Math.random() * 9000)}`,
             avatar: cleanName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
           };
@@ -154,7 +158,9 @@ export const EditProjectModal = ({
               ...prev.studentsInvolved,
               {
                 studentId: newStuId,
+                id: newStuId,
                 studentName: cleanName,
+                name: cleanName,
                 department: newMemberDept,
                 role: newMemberRole || 'Quantum Developer'
               }

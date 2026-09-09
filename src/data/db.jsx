@@ -849,24 +849,29 @@ export const QuantumDBProvider = ({ children }) => {
       if (stuPrjRes.status === 'fulfilled' && stuPrjRes.value.data && stuPrjRes.value.data.length > 0) {
         hasDedicatedData = true;
         stuPrjRes.value.data.forEach(sp => {
+          const rawId = sp.id ? String(sp.id).split('-SP-')[0] : '';
           const key = (sp.title || '').trim().toLowerCase();
           const file = getDoc(sp.id);
           const stuObj = sp.student_name ? {
             studentId: sp.student_id || `STU-${Date.now()}`,
+            id: sp.student_id || `STU-${Date.now()}`,
             studentName: sp.student_name,
             name: sp.student_name,
             role: sp.role || 'Project Developer',
-            department: 'Computer Science & Engineering'
+            department: 'Information Technology'
           } : null;
 
           if (projMap.has(key)) {
             const existing = projMap.get(key);
-            if (stuObj && !existing.studentsInvolved.some(s => s.studentName === stuObj.studentName)) {
+            if (stuObj && !existing.studentsInvolved.some(s => 
+              (s.studentName && s.studentName.toLowerCase() === stuObj.studentName.toLowerCase()) || 
+              (s.studentId && String(s.studentId) === String(stuObj.studentId))
+            )) {
               existing.studentsInvolved.push(stuObj);
             }
           } else {
             projMap.set(key, {
-              id: sp.id ? String(sp.id).split('-SP-')[0] : `PRJ-${Date.now()}`,
+              id: rawId || (sp.id ? String(sp.id).split('-SP-')[0] : `PRJ-${Date.now()}`),
               title: sp.title,
               domain: sp.domain || 'Quantum Computing',
               techStack: typeof sp.tech_stack === 'string' ? sp.tech_stack.split(',').map(s => s.trim()).filter(Boolean) : (Array.isArray(sp.tech_stack) ? sp.tech_stack : []),
@@ -1043,7 +1048,7 @@ export const QuantumDBProvider = ({ children }) => {
               id: sp.studentId || `STU-${loadedStudents.length + 1}`,
               name: sp.studentName,
               studentId: sp.studentId || `QU-${Math.floor(1000 + Math.random() * 9000)}`,
-              department: sp.department || 'Computer Science & Engineering',
+              department: sp.department || 'Information Technology',
               year: 'Student Developer',
               avatar: sp.studentName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
             });
@@ -1070,7 +1075,7 @@ export const QuantumDBProvider = ({ children }) => {
               id: sp.studentId || `STU-${loadedStudents.length + 1}`,
               name: sp.studentName,
               studentId: sp.studentId || `QU-${Math.floor(1000 + Math.random() * 9000)}`,
-              department: sp.department || 'Computer Science & Engineering',
+              department: sp.department || 'Information Technology',
               year: 'Student Competitor',
               avatar: sp.studentName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
             });
@@ -1169,19 +1174,21 @@ export const QuantumDBProvider = ({ children }) => {
             baseProjects.push(lp);
             projIdSet.add(key);
           } else {
-            const existing = baseProjects.find(bp => String(bp.id).toLowerCase() === key);
+            const existing = baseProjects.find(bp => String(bp.id).toLowerCase() === key || (bp.title && bp.title.toLowerCase() === (lp.title || '').toLowerCase()));
             if (existing) {
               (lp.facultyInvolved || []).forEach(lf => {
                 if (!existing.facultyInvolved) existing.facultyInvolved = [];
                 const lfId = lf.facultyId || lf.id || lf.name || lf.facultyName;
-                if (!existing.facultyInvolved.some(f => (f.facultyId || f.id || f.name || f.facultyName) === lfId)) {
+                const lfName = (lf.facultyName || lf.name || '').toLowerCase();
+                if (!existing.facultyInvolved.some(f => (f.facultyId || f.id) === lfId || (lfName && (f.facultyName || f.name || '').toLowerCase() === lfName))) {
                   existing.facultyInvolved.push(lf);
                 }
               });
               (lp.studentsInvolved || []).forEach(ls => {
                 if (!existing.studentsInvolved) existing.studentsInvolved = [];
                 const lsId = ls.studentId || ls.id || ls.name || ls.studentName;
-                if (!existing.studentsInvolved.some(s => (s.studentId || s.id || s.name || s.studentName) === lsId)) {
+                const lsName = (ls.studentName || ls.name || '').toLowerCase();
+                if (!existing.studentsInvolved.some(s => (s.studentId || s.id) === lsId || (lsName && (s.studentName || s.name || '').toLowerCase() === lsName))) {
                   existing.studentsInvolved.push(ls);
                 }
               });
@@ -1232,12 +1239,14 @@ export const QuantumDBProvider = ({ children }) => {
             const facList = [...(p.facultyInvolved || [])];
             (loc.facultyInvolved || []).forEach(lf => {
               const lfId = lf.facultyId || lf.id || lf.name || lf.facultyName;
-              if (!facList.some(f => (f.facultyId || f.id || f.name || f.facultyName) === lfId)) facList.push(lf);
+              const lfName = (lf.facultyName || lf.name || '').toLowerCase();
+              if (!facList.some(f => (f.facultyId || f.id) === lfId || (lfName && (f.facultyName || f.name || '').toLowerCase() === lfName))) facList.push(lf);
             });
             const stuList = [...(p.studentsInvolved || [])];
             (loc.studentsInvolved || []).forEach(ls => {
               const lsId = ls.studentId || ls.id || ls.name || ls.studentName;
-              if (!stuList.some(s => (s.studentId || s.id || s.name || s.studentName) === lsId)) stuList.push(ls);
+              const lsName = (ls.studentName || ls.name || '').toLowerCase();
+              if (!stuList.some(s => (s.studentId || s.id) === lsId || (lsName && (s.studentName || s.name || '').toLowerCase() === lsName))) stuList.push(ls);
             });
             localProjMap.set(key, {
               ...loc,
@@ -1634,9 +1643,9 @@ export const QuantumDBProvider = ({ children }) => {
       let nextStudents = [...prev.students];
 
       if (personData) {
-        if (roleType === 'faculty' && !nextFaculty.some(f => f.id === matchPerson)) {
+        if (roleType === 'faculty' && !nextFaculty.some(f => f.id === matchPerson || (personData.name && f.name.toLowerCase() === personData.name.toLowerCase()))) {
           nextFaculty = [{ ...personData, id: matchPerson }, ...nextFaculty];
-        } else if (roleType === 'student' && !nextStudents.some(s => s.id === matchPerson)) {
+        } else if (roleType === 'student' && !nextStudents.some(s => s.id === matchPerson || (personData.name && s.name.toLowerCase() === personData.name.toLowerCase()))) {
           nextStudents = [{ ...personData, id: matchPerson }, ...nextStudents];
         }
       }
@@ -1645,24 +1654,60 @@ export const QuantumDBProvider = ({ children }) => {
         if (String(p.id) !== matchProj) return p;
         if (roleType === 'faculty') {
           const currentFac = p.facultyInvolved || [];
-          const existingIdx = currentFac.findIndex(fi => String(fi.facultyId || fi) === matchPerson);
+          const facName = recordData.facultyName || recordData.name || personData?.name || '';
+          const existingIdx = currentFac.findIndex(fi => 
+            String(fi.facultyId || fi.id || fi) === matchPerson || 
+            (facName && String(fi.facultyName || fi.name || '').toLowerCase() === facName.toLowerCase())
+          );
           let newFac;
           if (existingIdx >= 0) {
             newFac = [...currentFac];
-            newFac[existingIdx] = { ...newFac[existingIdx], ...recordData, facultyId: matchPerson };
+            newFac[existingIdx] = { 
+              ...newFac[existingIdx], 
+              ...recordData, 
+              facultyId: matchPerson,
+              id: matchPerson,
+              facultyName: facName || newFac[existingIdx].facultyName || newFac[existingIdx].name,
+              name: facName || newFac[existingIdx].name || newFac[existingIdx].facultyName
+            };
           } else {
-            newFac = [...currentFac, { facultyId: matchPerson, role: recordData.role || 'Faculty Advisor', ...recordData }];
+            newFac = [...currentFac, { 
+              facultyId: matchPerson, 
+              id: matchPerson,
+              facultyName: facName,
+              name: facName,
+              role: recordData.role || 'Faculty Advisor', 
+              ...recordData 
+            }];
           }
           return { ...p, facultyInvolved: newFac };
         } else {
           const currentStu = p.studentsInvolved || [];
-          const existingIdx = currentStu.findIndex(si => String(si.studentId || si) === matchPerson);
+          const stuName = recordData.studentName || recordData.name || personData?.name || '';
+          const existingIdx = currentStu.findIndex(si => 
+            String(si.studentId || si.id || si) === matchPerson || 
+            (stuName && String(si.studentName || si.name || '').toLowerCase() === stuName.toLowerCase())
+          );
           let newStu;
           if (existingIdx >= 0) {
             newStu = [...currentStu];
-            newStu[existingIdx] = { ...newStu[existingIdx], ...recordData, studentId: matchPerson };
+            newStu[existingIdx] = { 
+              ...newStu[existingIdx], 
+              ...recordData, 
+              studentId: matchPerson,
+              id: matchPerson,
+              studentName: stuName || newStu[existingIdx].studentName || newStu[existingIdx].name,
+              name: stuName || newStu[existingIdx].name || newStu[existingIdx].studentName
+            };
           } else {
-            newStu = [...currentStu, { studentId: matchPerson, role: recordData.role || 'Project Developer', ...recordData }];
+            newStu = [...currentStu, { 
+              studentId: matchPerson, 
+              id: matchPerson,
+              studentName: stuName,
+              name: stuName,
+              role: recordData.role || 'Project Developer', 
+              ...recordData 
+            }];
           }
           return { ...p, studentsInvolved: newStu };
         }

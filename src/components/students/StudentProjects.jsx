@@ -57,11 +57,20 @@ export const StudentProjects = ({ onOpenProfile, onAddProject }) => {
         (cleanNameCandidate && stu.name.toLowerCase() === cleanNameCandidate.toLowerCase()) ||
         (typeof sid === 'string' && stu.name.toLowerCase() === sid.toLowerCase())
       );
-      if (s) return { ...si, student: s, studentName: s.name, department: s.department || si.department || 'Computer Science & Engineering' };
+      if (s) {
+        return {
+          ...si,
+          student: s,
+          studentName: s.name,
+          name: s.name,
+          role: (typeof si === 'object' && si?.role) ? si.role : 'Quantum Developer',
+          department: s.department || (typeof si === 'object' && si?.department) || 'Information Technology'
+        };
+      }
 
       const fallbackName = cleanNameCandidate || (typeof sid === 'string' && !sid.startsWith('STU-') && !sid.startsWith('QU-') ? sid : (typeof si === 'object' && si?.studentName ? si.studentName : (typeof sid === 'string' && sid.startsWith('STU-') ? `Student (${sid})` : "Student Developer")));
-      const dept = (typeof si === 'object' && si?.department) ? si.department : "Computer Science & Engineering";
-      const roll = (typeof si === 'object' && (si?.roll || si?.studentId)) ? (si.roll || si.studentId) : (typeof sid === 'string' && sid.startsWith('QU-') ? sid : "QU-2024");
+      const dept = (typeof si === 'object' && si?.department) ? si.department : "Information Technology";
+      const roll = (typeof si === 'object' && (si?.roll || si?.studentId)) ? (si.roll || si.studentId) : (typeof sid === 'string' && sid.startsWith('QU-') ? sid : "QU-2026");
 
       return {
         ...si,
@@ -73,6 +82,8 @@ export const StudentProjects = ({ onOpenProfile, onAddProject }) => {
           avatar: fallbackName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
         },
         studentName: fallbackName,
+        name: fallbackName,
+        role: (typeof si === 'object' && si?.role) ? si.role : 'Quantum Developer',
         department: dept
       };
     });
@@ -87,10 +98,19 @@ export const StudentProjects = ({ onOpenProfile, onAddProject }) => {
         (cleanNameCandidate && fac.name.toLowerCase() === cleanNameCandidate.toLowerCase()) ||
         (typeof fid === 'string' && fac.name.toLowerCase() === fid.toLowerCase())
       );
-      if (f) return { ...fi, faculty: f, facultyName: f.name, department: f.department || fi.department || 'Quantum Science' };
+      if (f) {
+        return {
+          ...fi,
+          faculty: f,
+          facultyName: f.name,
+          name: f.name,
+          role: (typeof fi === 'object' && fi?.role) ? fi.role : 'Research Advisor & PI',
+          department: f.department || (typeof fi === 'object' && fi?.department) || 'Physics & Quantum Computing'
+        };
+      }
 
       const fallbackName = cleanNameCandidate || (typeof fid === 'string' && !fid.startsWith('FAC-') ? fid : (typeof fi === 'object' && fi?.facultyName ? fi.facultyName : (typeof fid === 'string' && fid.startsWith('FAC-') ? `Faculty (${fid})` : "Dr. Faculty Mentor")));
-      const dept = (typeof fi === 'object' && fi?.department) ? fi.department : "Quantum Science";
+      const dept = (typeof fi === 'object' && fi?.department) ? fi.department : "Physics & Quantum Computing";
       const title = (typeof fi === 'object' && fi?.title) ? fi.title : ((typeof fi === 'object' && fi?.role) ? fi.role : "Faculty Advisor");
 
       return {
@@ -103,6 +123,8 @@ export const StudentProjects = ({ onOpenProfile, onAddProject }) => {
           avatar: fallbackName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
         },
         facultyName: fallbackName,
+        name: fallbackName,
+        role: title,
         department: dept
       };
     });
@@ -279,7 +301,11 @@ export const StudentProjects = ({ onOpenProfile, onAddProject }) => {
                           confirmDelete({
                             title: `Remove ${item.student.name}`,
                             message: `Remove ${item.student.name} from this project?`,
-                            onConfirm: () => removeProjectParticipant(selectedProject.id, 'student', item.studentId)
+                            onConfirm: () => removeProjectParticipant(
+                              selectedProject.id,
+                              'student',
+                              item.studentId || item.student?.id || item.student?.studentId || item.student?.name
+                            )
                           });
                         }}
                       >

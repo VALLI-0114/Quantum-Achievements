@@ -2070,12 +2070,18 @@ export const QuantumDBProvider = ({ children }) => {
         if (roleType === 'faculty') {
           return {
             ...h,
-            facultyParticipants: (h.facultyParticipants || []).filter(fp => String(fp.facultyId) !== matchPerson)
+            facultyParticipants: (h.facultyParticipants || []).filter(fp =>
+              String(fp.facultyId || fp.id || fp) !== matchPerson &&
+              String(fp.facultyName || fp.name || '') !== matchPerson
+            )
           };
         } else {
           return {
             ...h,
-            studentParticipants: (h.studentParticipants || []).filter(sp => String(sp.studentId) !== matchPerson)
+            studentParticipants: (h.studentParticipants || []).filter(sp =>
+              String(sp.studentId || sp.id || sp) !== matchPerson &&
+              String(sp.studentName || sp.name || '') !== matchPerson
+            )
           };
         }
       })

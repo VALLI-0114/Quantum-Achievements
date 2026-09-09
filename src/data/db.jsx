@@ -468,35 +468,67 @@ export const QuantumDBProvider = ({ children }) => {
           const isStudent = h.targetAudience === 'students' || h.targetAudience === 'student' || (!h.targetAudience && h.studentParticipants && h.studentParticipants.length > 0);
 
           if (isFaculty) {
-            const facP = (h.facultyParticipants || [])[0] || {};
-            facHckRows.push({
-              id: h.id,
-              hackathon_name: h.name,
-              organizer: h.organizer || '',
-              edition: h.edition || '',
-              date: h.date || '',
-              faculty_name: facP.facultyName || facP.name || 'Faculty Mentor',
-              faculty_id: facP.facultyId || '',
-              team_name: facP.teamName || 'Faculty Team',
-              project_built: facP.projectBuilt || '',
-              award: facP.award || 'Winner'
-            });
+            if (h.facultyParticipants && h.facultyParticipants.length > 0) {
+              h.facultyParticipants.forEach((facP, idx) => {
+                facHckRows.push({
+                  id: h.id ? (h.facultyParticipants.length === 1 ? h.id : `${h.id}-FP-${idx + 1}`) : `HCK-F-${Date.now()}-${idx}`,
+                  hackathon_name: h.name,
+                  organizer: h.organizer || '',
+                  edition: h.edition || '',
+                  date: h.date || '',
+                  faculty_name: facP.facultyName || facP.name || 'Faculty Mentor',
+                  faculty_id: facP.facultyId || '',
+                  team_name: facP.teamName || 'Faculty Team',
+                  project_built: facP.projectBuilt || '',
+                  award: facP.award || 'Winner'
+                });
+              });
+            } else {
+              facHckRows.push({
+                id: h.id || `HCK-F-${Date.now()}`,
+                hackathon_name: h.name,
+                organizer: h.organizer || '',
+                edition: h.edition || '',
+                date: h.date || '',
+                faculty_name: '',
+                faculty_id: '',
+                team_name: '',
+                project_built: '',
+                award: 'Winner'
+              });
+            }
           }
 
           if (isStudent) {
-            const stuP = (h.studentParticipants || [])[0] || {};
-            stuHckRows.push({
-              id: h.id,
-              hackathon_name: h.name,
-              organizer: h.organizer || '',
-              edition: h.edition || '',
-              date: h.date || '',
-              student_name: stuP.studentName || stuP.name || 'Student Lead',
-              student_id: stuP.studentId || '',
-              team_name: stuP.teamName || 'Student Team',
-              project_built: stuP.projectBuilt || '',
-              award: stuP.award || 'Winner'
-            });
+            if (h.studentParticipants && h.studentParticipants.length > 0) {
+              h.studentParticipants.forEach((stuP, idx) => {
+                stuHckRows.push({
+                  id: h.id ? (h.studentParticipants.length === 1 ? h.id : `${h.id}-SP-${idx + 1}`) : `HCK-S-${Date.now()}-${idx}`,
+                  hackathon_name: h.name,
+                  organizer: h.organizer || '',
+                  edition: h.edition || '',
+                  date: h.date || '',
+                  student_name: stuP.studentName || stuP.name || 'Student Member',
+                  student_id: stuP.studentId || '',
+                  team_name: stuP.teamName || 'Student Team',
+                  project_built: stuP.projectBuilt || '',
+                  award: stuP.award || 'Winner'
+                });
+              });
+            } else {
+              stuHckRows.push({
+                id: h.id || `HCK-S-${Date.now()}`,
+                hackathon_name: h.name,
+                organizer: h.organizer || '',
+                edition: h.edition || '',
+                date: h.date || '',
+                student_name: '',
+                student_id: '',
+                team_name: '',
+                project_built: '',
+                award: 'Winner'
+              });
+            }
           }
         });
 
@@ -805,96 +837,169 @@ export const QuantumDBProvider = ({ children }) => {
       // Faculty Papers
       if (facPapRes.status === 'fulfilled' && facPapRes.value.data && facPapRes.value.data.length > 0) {
         hasDedicatedData = true;
+        const paperMap = new Map();
         facPapRes.value.data.forEach(fp => {
-          loadedPapers.push({
-            id: fp.id,
-            title: fp.title,
-            venue: fp.venue || '',
-            doi: fp.doi || '',
-            researchArea: fp.research_area || 'Quantum Computing',
-            abstract: fp.abstract || '',
-            citations: Number(fp.citations) || 0,
-            date: fp.date || '',
-            targetAudience: 'faculty',
-            facultyAuthors: [fp.faculty_name || 'Faculty Author'],
-            studentAuthors: []
-          });
+          const key = (fp.title || '').trim().toLowerCase();
+          const authorList = (fp.faculty_name || '').split(',').map(s => s.trim()).filter(Boolean);
+          if (paperMap.has(key)) {
+            const existing = paperMap.get(key);
+            authorList.forEach(a => {
+              if (!existing.facultyAuthors.includes(a)) existing.facultyAuthors.push(a);
+            });
+          } else {
+            paperMap.set(key, {
+              id: fp.id,
+              title: fp.title,
+              venue: fp.venue || '',
+              doi: fp.doi || '',
+              researchArea: fp.research_area || 'Quantum Computing',
+              abstract: fp.abstract || '',
+              citations: Number(fp.citations) || 0,
+              date: fp.date || '',
+              targetAudience: 'faculty',
+              facultyAuthors: authorList.length > 0 ? authorList : [fp.faculty_id || 'Faculty Author'],
+              studentAuthors: []
+            });
+          }
         });
+        loadedPapers.push(...paperMap.values());
       }
 
       // Student Papers
       if (stuPapRes.status === 'fulfilled' && stuPapRes.value.data && stuPapRes.value.data.length > 0) {
         hasDedicatedData = true;
+        const paperMap = new Map();
         stuPapRes.value.data.forEach(sp => {
-          loadedPapers.push({
-            id: sp.id,
-            title: sp.title,
-            venue: sp.venue || '',
-            doi: sp.doi || '',
-            researchArea: sp.research_area || 'Quantum Computing',
-            abstract: sp.abstract || '',
-            citations: Number(sp.citations) || 0,
-            date: sp.date || '',
-            targetAudience: 'students',
-            facultyAuthors: [],
-            studentAuthors: [sp.student_name || 'Student Author']
-          });
+          const key = (sp.title || '').trim().toLowerCase();
+          const authorList = (sp.student_name || '').split(',').map(s => s.trim()).filter(Boolean);
+          if (paperMap.has(key)) {
+            const existing = paperMap.get(key);
+            authorList.forEach(a => {
+              if (!existing.studentAuthors.includes(a)) existing.studentAuthors.push(a);
+            });
+          } else {
+            paperMap.set(key, {
+              id: sp.id,
+              title: sp.title,
+              venue: sp.venue || '',
+              doi: sp.doi || '',
+              researchArea: sp.research_area || 'Quantum Computing',
+              abstract: sp.abstract || '',
+              citations: Number(sp.citations) || 0,
+              date: sp.date || '',
+              targetAudience: 'students',
+              facultyAuthors: [],
+              studentAuthors: authorList.length > 0 ? authorList : [sp.student_id || 'Student Author']
+            });
+          }
         });
+        loadedPapers.push(...paperMap.values());
       }
 
       // Faculty Hackathons
       if (facHckRes.status === 'fulfilled' && facHckRes.value.data && facHckRes.value.data.length > 0) {
         hasDedicatedData = true;
+        const hckMap = new Map();
         facHckRes.value.data.forEach(fh => {
+          const key = `${(fh.hackathon_name || '').trim().toLowerCase()}_${(fh.edition || '').trim().toLowerCase()}`;
           const file = getDoc(fh.id);
-          loadedHackathons.push({
-            id: fh.id,
-            name: fh.hackathon_name,
-            organizer: fh.organizer || '',
-            edition: fh.edition || '',
-            date: fh.date || '',
-            targetAudience: 'faculty',
-            uploadedFile: file,
-            facultyParticipants: fh.faculty_name ? [{
-              facultyId: fh.faculty_id || 'FAC-01',
-              facultyName: fh.faculty_name,
-              name: fh.faculty_name,
-              teamName: fh.team_name || 'Team Quantum',
-              projectBuilt: fh.project_built || '',
-              award: fh.award || 'Participant',
-              uploadedFile: file
-            }] : [],
-            studentParticipants: []
-          });
+          const pObj = fh.faculty_name ? {
+            facultyId: fh.faculty_id || `FAC-${Date.now()}`,
+            facultyName: fh.faculty_name,
+            name: fh.faculty_name,
+            teamName: fh.team_name || 'Team Quantum',
+            projectBuilt: fh.project_built || '',
+            award: fh.award || 'Winner',
+            uploadedFile: file
+          } : null;
+
+          if (hckMap.has(key)) {
+            const existing = hckMap.get(key);
+            if (pObj && !existing.facultyParticipants.some(p => p.facultyName === pObj.facultyName)) {
+              existing.facultyParticipants.push(pObj);
+            }
+          } else {
+            hckMap.set(key, {
+              id: fh.id ? String(fh.id).split('-FP-')[0] : `HCK-${Date.now()}`,
+              name: fh.hackathon_name,
+              organizer: fh.organizer || '',
+              edition: fh.edition || '',
+              date: fh.date || '',
+              targetAudience: 'faculty',
+              uploadedFile: file,
+              facultyParticipants: pObj ? [pObj] : [],
+              studentParticipants: []
+            });
+          }
         });
+        loadedHackathons.push(...hckMap.values());
       }
 
       // Student Hackathons
       if (stuHckRes.status === 'fulfilled' && stuHckRes.value.data && stuHckRes.value.data.length > 0) {
         hasDedicatedData = true;
+        const hckMap = new Map();
         stuHckRes.value.data.forEach(sh => {
+          const key = `${(sh.hackathon_name || '').trim().toLowerCase()}_${(sh.edition || '').trim().toLowerCase()}`;
           const file = getDoc(sh.id);
-          loadedHackathons.push({
-            id: sh.id,
-            name: sh.hackathon_name,
-            organizer: sh.organizer || '',
-            edition: sh.edition || '',
-            date: sh.date || '',
-            targetAudience: 'students',
-            uploadedFile: file,
-            facultyParticipants: [],
-            studentParticipants: sh.student_name ? [{
-              studentId: sh.student_id || 'STU-01',
-              studentName: sh.student_name,
-              name: sh.student_name,
-              teamName: sh.team_name || 'Team Quantum',
-              projectBuilt: sh.project_built || '',
-              award: sh.award || 'Participant',
-              uploadedFile: file
-            }] : []
-          });
+          const pObj = sh.student_name ? {
+            studentId: sh.student_id || `STU-${Date.now()}`,
+            studentName: sh.student_name,
+            name: sh.student_name,
+            teamName: sh.team_name || 'Team Quantum',
+            projectBuilt: sh.project_built || '',
+            award: sh.award || 'Winner',
+            uploadedFile: file
+          } : null;
+
+          if (hckMap.has(key)) {
+            const existing = hckMap.get(key);
+            if (pObj && !existing.studentParticipants.some(p => p.studentName === pObj.studentName)) {
+              existing.studentParticipants.push(pObj);
+            }
+          } else {
+            hckMap.set(key, {
+              id: sh.id ? String(sh.id).split('-SP-')[0] : `HCK-${Date.now()}`,
+              name: sh.hackathon_name,
+              organizer: sh.organizer || '',
+              edition: sh.edition || '',
+              date: sh.date || '',
+              targetAudience: 'students',
+              uploadedFile: file,
+              facultyParticipants: [],
+              studentParticipants: pObj ? [pObj] : []
+            });
+          }
         });
+        loadedHackathons.push(...hckMap.values());
       }
+
+      // Auto-extract faculty & student profiles if missing
+      loadedHackathons.forEach(h => {
+        (h.facultyParticipants || []).forEach(fp => {
+          if (fp.facultyName && !loadedFaculty.some(f => f.name.toLowerCase() === fp.facultyName.toLowerCase() || f.id === fp.facultyId)) {
+            loadedFaculty.push({
+              id: fp.facultyId || `FAC-${loadedFaculty.length + 1}`,
+              name: fp.facultyName,
+              department: fp.department || 'Physics & Quantum Computing',
+              title: 'Faculty Researcher / Mentor',
+              avatar: fp.facultyName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+            });
+          }
+        });
+        (h.studentParticipants || []).forEach(sp => {
+          if (sp.studentName && !loadedStudents.some(s => s.name.toLowerCase() === sp.studentName.toLowerCase() || s.id === sp.studentId)) {
+            loadedStudents.push({
+              id: sp.studentId || `STU-${loadedStudents.length + 1}`,
+              name: sp.studentName,
+              studentId: sp.studentId || `QU-${Math.floor(1000 + Math.random() * 9000)}`,
+              department: sp.department || 'Computer Science & Engineering',
+              year: 'Student Competitor',
+              avatar: sp.studentName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+            });
+          }
+        });
+      });
 
       // Auto-extract faculty & student profiles if missing
       loadedCourses.forEach(c => {

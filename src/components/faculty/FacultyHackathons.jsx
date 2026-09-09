@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Trophy, ArrowLeft, Search, User, Award, CheckCircle2, FileDown, Download, Trash2 } from 'lucide-react';
+import { Trophy, ArrowLeft, Search, User, Award, CheckCircle2, FileDown, Download, Trash2, Edit3, UserPlus, Plus } from 'lucide-react';
 import { useQuantumDB } from '../../data/db';
 import { downloadCategoryReportPDF, downloadHackathonReportPDF } from '../../utils/pdfGenerator';
+import { EditHackathonModal } from '../common/EditHackathonModal';
 
 export const FacultyHackathons = ({ onOpenProfile, onAddHackathon }) => {
   const { hackathons, faculty, deleteRecord, confirmDelete, removeHackathonParticipant } = useQuantumDB();
   const [selectedHackathonId, setSelectedHackathonId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingHackathon, setEditingHackathon] = useState(null);
 
   const selectedHackathon = hackathons.find(h => h.id === selectedHackathonId);
 
@@ -43,11 +45,21 @@ export const FacultyHackathons = ({ onOpenProfile, onAddHackathon }) => {
 
   if (selectedHackathon) {
     const facultyParticipants = (selectedHackathon.facultyParticipants || []).map(fp => {
-      const f = faculty.find(fac => fac.id === fp.facultyId) || {
-        name: "Dr. Faculty Participant",
-        department: "Computer Science"
+      const fid = fp.facultyId || fp.id || fp;
+      const f = faculty.find(fac => fac.id === fid || (fp.facultyName && fac.name.toLowerCase() === fp.facultyName.toLowerCase()) || (fp.name && fac.name.toLowerCase() === fp.name.toLowerCase())) || {
+        id: fid,
+        name: fp.facultyName || fp.name || "Faculty Mentor",
+        department: fp.department || "Physics & Quantum Computing",
+        title: fp.role || fp.title || "Faculty Mentor",
+        avatar: (fp.facultyName || fp.name || 'FM').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
       };
-      return { ...fp, faculty: f, facultyName: f.name, name: f.name, department: f.department };
+      return {
+        ...fp,
+        faculty: f,
+        facultyName: f.name,
+        name: f.name,
+        department: f.department || fp.department || "Physics"
+      };
     });
 
     const handleDownloadSingleHackathonPDF = () => {
@@ -92,6 +104,13 @@ export const FacultyHackathons = ({ onOpenProfile, onAddHackathon }) => {
             </div>
 
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setEditingHackathon(selectedHackathon)}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+              >
+                <Edit3 size={15} /> Edit Hackathon & Team
+              </button>
               <button className="btn btn-outline" onClick={handleDownloadSingleHackathonPDF}>
                 <Download size={16} /> Download Hackathon PDF
               </button>
@@ -147,9 +166,18 @@ export const FacultyHackathons = ({ onOpenProfile, onAddHackathon }) => {
         </div>
 
         {/* Faculty Participants Table */}
-        <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1rem' }}>
-          Faculty Participants, Teams & Award Placements ({facultyParticipants.length})
-        </h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+            Faculty Participants, Teams & Award Placements ({facultyParticipants.length})
+          </h3>
+          <button
+            className="btn btn-outline btn-sm"
+            onClick={() => setEditingHackathon(selectedHackathon)}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', borderColor: 'var(--secondary)', color: 'var(--secondary)' }}
+          >
+            <UserPlus size={14} /> + Add Team Member
+          </button>
+        </div>
 
         <div className="dbms-table-container">
           <table className="dbms-table">
@@ -239,6 +267,14 @@ export const FacultyHackathons = ({ onOpenProfile, onAddHackathon }) => {
             </tbody>
           </table>
         </div>
+
+        {editingHackathon && (
+          <EditHackathonModal
+            isOpen={Boolean(editingHackathon)}
+            onClose={() => setEditingHackathon(null)}
+            hackathon={editingHackathon}
+          />
+        )}
       </div>
     );
   }

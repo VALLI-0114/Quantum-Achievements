@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Trophy, ArrowLeft, Search, User, FileDown, Download, Trash2 } from 'lucide-react';
+import { Trophy, ArrowLeft, Search, User, FileDown, Download, Trash2, Edit3, UserPlus, Plus } from 'lucide-react';
 import { useQuantumDB } from '../../data/db';
-import { downloadCategoryReportPDF, downloadHackathonReportPDF } from '../../utils/pdfGenerator';
+import { downloadCategoryReportPDF, downloadPaperReportPDF, downloadHackathonReportPDF } from '../../utils/pdfGenerator';
+import { EditHackathonModal } from '../common/EditHackathonModal';
 
 export const StudentHackathons = ({ onOpenProfile, onAddHackathon }) => {
   const { hackathons, students, deleteRecord, confirmDelete, removeHackathonParticipant } = useQuantumDB();
   const [selectedHackathonId, setSelectedHackathonId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingHackathon, setEditingHackathon] = useState(null);
 
   const selectedHackathon = hackathons.find(h => h.id === selectedHackathonId);
 
@@ -43,13 +45,22 @@ export const StudentHackathons = ({ onOpenProfile, onAddHackathon }) => {
 
   if (selectedHackathon) {
     const studentParticipants = (selectedHackathon.studentParticipants || []).map(sp => {
-      const s = students.find(stu => stu.id === sp.studentId) || {
-        id: sp.studentId,
-        name: "Student Competitor",
-        department: "Computer Science",
-        studentId: "QU-2023"
+      const sid = sp.studentId || sp.id || sp;
+      const s = students.find(stu => stu.id === sid || stu.studentId === sid || (sp.studentName && stu.name.toLowerCase() === sp.studentName.toLowerCase()) || (sp.name && stu.name.toLowerCase() === sp.name.toLowerCase())) || {
+        id: sid,
+        name: sp.studentName || sp.name || "Student Member",
+        department: sp.department || "Computer Science & Engineering",
+        studentId: sp.studentId || (typeof sid === 'string' && sid.startsWith('QU-') ? sid : "QU-2026"),
+        avatar: (sp.studentName || sp.name || 'SM').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
+        email: `${(sp.studentName || sp.name || 'student').toLowerCase().replace(/[^a-z0-9]/g, '')}@student.quantum.edu`
       };
-      return { ...sp, student: s, studentName: s.name, name: s.name, department: s.department };
+      return {
+        ...sp,
+        student: s,
+        studentName: s.name,
+        name: s.name,
+        department: s.department || sp.department || "Computer Science & Engineering"
+      };
     });
 
     const handleDownloadSingleHackathonPDF = () => {
@@ -94,6 +105,13 @@ export const StudentHackathons = ({ onOpenProfile, onAddHackathon }) => {
             </div>
 
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button
+                className="btn btn-primary"
+                onClick={() => setEditingHackathon(selectedHackathon)}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+              >
+                <Edit3 size={15} /> Edit Hackathon & Team
+              </button>
               <button className="btn btn-outline" onClick={handleDownloadSingleHackathonPDF}>
                 <Download size={16} /> Download Hackathon PDF
               </button>
@@ -149,9 +167,18 @@ export const StudentHackathons = ({ onOpenProfile, onAddHackathon }) => {
         </div>
 
         {/* Student Participants Table */}
-        <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1rem' }}>
-          Student Participants, Teams & Award Placements ({studentParticipants.length})
-        </h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+            Student Participants, Teams & Award Placements ({studentParticipants.length})
+          </h3>
+          <button
+            className="btn btn-outline btn-sm"
+            onClick={() => setEditingHackathon(selectedHackathon)}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', borderColor: 'var(--primary)', color: 'var(--primary)' }}
+          >
+            <UserPlus size={14} /> + Add Team Member
+          </button>
+        </div>
 
         <div className="dbms-table-container">
           <table className="dbms-table">
@@ -247,6 +274,14 @@ export const StudentHackathons = ({ onOpenProfile, onAddHackathon }) => {
             </tbody>
           </table>
         </div>
+
+        {editingHackathon && (
+          <EditHackathonModal
+            isOpen={Boolean(editingHackathon)}
+            onClose={() => setEditingHackathon(null)}
+            hackathon={editingHackathon}
+          />
+        )}
       </div>
     );
   }

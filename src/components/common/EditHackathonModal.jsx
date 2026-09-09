@@ -36,6 +36,7 @@ export const EditHackathonModal = ({
   const [newMemberExtra, setNewMemberExtra] = useState(''); // roll or title
   const [newMemberAward, setNewMemberAward] = useState('🏆 1st Place Winner');
   const [newMemberTeam, setNewMemberTeam] = useState('Quantum Innovators');
+  const [newMemberProject, setNewMemberProject] = useState('');
 
   useEffect(() => {
     if (hackathon && isOpen) {
@@ -51,27 +52,30 @@ export const EditHackathonModal = ({
       setSelectedExistingId('');
       setNewMemberName('');
       setNewMemberExtra('');
+      setNewMemberProject('');
     }
   }, [hackathon, isOpen]);
 
   if (!isOpen || !hackathon) return null;
 
+  const isStudentAudience = formData.targetAudience === 'students' || formData.targetAudience === 'student';
+
   const handleRemoveStudent = (studentId) => {
     setFormData(prev => ({
       ...prev,
-      studentParticipants: prev.studentParticipants.filter(s => String(s.studentId || s) !== String(studentId))
+      studentParticipants: prev.studentParticipants.filter(s => String(s.studentId || s.id || s) !== String(studentId))
     }));
   };
 
   const handleRemoveFaculty = (facultyId) => {
     setFormData(prev => ({
       ...prev,
-      facultyParticipants: prev.facultyParticipants.filter(f => String(f.facultyId || f) !== String(facultyId))
+      facultyParticipants: prev.facultyParticipants.filter(f => String(f.facultyId || f.id || f) !== String(facultyId))
     }));
   };
 
   const handleAddMemberToForm = () => {
-    if (newMemberType === 'student') {
+    if (isStudentAudience) {
       if (selectedExistingId) {
         const sObj = students.find(s => s.id === selectedExistingId);
         setFormData(prev => ({
@@ -81,8 +85,11 @@ export const EditHackathonModal = ({
             {
               studentId: selectedExistingId,
               studentName: sObj?.name || '',
-              teamName: newMemberTeam || 'Quantum Team',
-              award: newMemberAward || 'Participant',
+              name: sObj?.name || '',
+              department: sObj?.department || 'Computer Science & Engineering',
+              teamName: newMemberTeam || '—',
+              projectBuilt: newMemberProject || '—',
+              award: newMemberAward || 'Winner',
               rank: 'Winner'
             }
           ]
@@ -99,8 +106,11 @@ export const EditHackathonModal = ({
               {
                 studentId: existing.id,
                 studentName: existing.name,
-                teamName: newMemberTeam,
-                award: newMemberAward,
+                name: existing.name,
+                department: existing.department || newMemberDept,
+                teamName: newMemberTeam || '—',
+                projectBuilt: newMemberProject || '—',
+                award: newMemberAward || 'Winner',
                 rank: 'Winner'
               }
             ]
@@ -121,8 +131,11 @@ export const EditHackathonModal = ({
               {
                 studentId: newStuId,
                 studentName: cleanName,
-                teamName: newMemberTeam,
-                award: newMemberAward,
+                name: cleanName,
+                department: newMemberDept || 'Computer Science & Engineering',
+                teamName: newMemberTeam || '—',
+                projectBuilt: newMemberProject || '—',
+                award: newMemberAward || 'Winner',
                 rank: 'Winner'
               }
             ],
@@ -142,8 +155,12 @@ export const EditHackathonModal = ({
             {
               facultyId: selectedExistingId,
               facultyName: fObj?.name || '',
+              name: fObj?.name || '',
+              department: fObj?.department || 'Physics & Quantum Computing',
+              teamName: newMemberTeam || '—',
+              projectBuilt: newMemberProject || '—',
               role: 'Faculty Mentor & Judge',
-              award: newMemberAward
+              award: newMemberAward || 'Participant'
             }
           ]
         }));
@@ -159,8 +176,12 @@ export const EditHackathonModal = ({
               {
                 facultyId: existing.id,
                 facultyName: existing.name,
+                name: existing.name,
+                department: existing.department || newMemberDept,
+                teamName: newMemberTeam || '—',
+                projectBuilt: newMemberProject || '—',
                 role: 'Faculty Mentor & Judge',
-                award: newMemberAward
+                award: newMemberAward || 'Participant'
               }
             ]
           }));
@@ -180,8 +201,12 @@ export const EditHackathonModal = ({
               {
                 facultyId: newFacId,
                 facultyName: cleanName,
+                name: cleanName,
+                department: newMemberDept || 'Physics & Quantum Computing',
+                teamName: newMemberTeam || '—',
+                projectBuilt: newMemberProject || '—',
                 role: 'Faculty Mentor & Judge',
-                award: newMemberAward
+                award: newMemberAward || 'Participant'
               }
             ],
             _newFaculty: [...(prev._newFaculty || []), newFac]
@@ -238,11 +263,11 @@ export const EditHackathonModal = ({
                 {hackathon.id}
               </span>
               <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                Edit Hackathon & Honors
+                Edit Hackathon & Team Roster
               </h3>
             </div>
             <p style={{ margin: '0.2rem 0 0', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-              Modify competitive event details, organizer, dates, and student winner placements
+              Modify event details, organizer, dates, and all team members (up to 6+ members)
             </p>
           </div>
 
@@ -275,7 +300,7 @@ export const EditHackathonModal = ({
                   type="radio"
                   name="editHackathonTargetAudience"
                   value="students"
-                  checked={formData.targetAudience === 'students' || formData.targetAudience === 'student'}
+                  checked={isStudentAudience}
                   onChange={() => setFormData({ ...formData, targetAudience: 'students' })}
                 />
                 <GraduationCap size={15} style={{ color: 'var(--primary)' }} />
@@ -287,7 +312,7 @@ export const EditHackathonModal = ({
                   type="radio"
                   name="editHackathonTargetAudience"
                   value="faculty"
-                  checked={formData.targetAudience === 'faculty'}
+                  checked={!isStudentAudience}
                   onChange={() => setFormData({ ...formData, targetAudience: 'faculty' })}
                 />
                 <Building size={15} style={{ color: 'var(--secondary)' }} />
@@ -357,98 +382,214 @@ export const EditHackathonModal = ({
           }}>
             <h4 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 1rem', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
               <Trophy size={18} style={{ color: 'var(--primary)' }} />
-              Winner Roster & Placements ({formData.studentParticipants.length})
+              Team Roster & Placements ({isStudentAudience ? formData.studentParticipants.length : formData.facultyParticipants.length})
             </h4>
 
-            {formData.studentParticipants.length === 0 ? (
-              <div style={{ padding: '1rem', background: 'var(--bg-surface)', borderRadius: '8px', border: '1px dashed var(--border-light)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.84rem', marginBottom: '1rem' }}>
-                No student participants recorded yet. Add below.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
-                {formData.studentParticipants.map((sp, idx) => {
-                  const sid = sp.studentId || sp;
-                  const sObj = students.find(s => s.id === sid) || (formData._newStudents || []).find(s => s.id === sid) || { name: sp.studentName || sid };
-                  return (
-                    <div
-                      key={sid || idx}
-                      style={{
-                        background: 'var(--bg-surface)',
-                        border: '1px solid var(--border-light)',
-                        borderRadius: '8px',
-                        padding: '0.75rem 1rem',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        gap: '0.75rem',
-                        flexWrap: 'wrap'
-                      }}
-                    >
-                      <div>
-                        <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>{sObj.name}</strong>
-                        <div style={{ fontSize: '0.76rem', color: 'var(--primary)', fontWeight: 600 }}>
-                          {sp.award || 'Winner'} • {sp.teamName || 'Team'}
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="btn-icon-danger"
-                        onClick={() => handleRemoveStudent(sid)}
-                        style={{ padding: '4px' }}
+            {isStudentAudience ? (
+              formData.studentParticipants.length === 0 ? (
+                <div style={{ padding: '1rem', background: 'var(--bg-surface)', borderRadius: '8px', border: '1px dashed var(--border-light)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.84rem', marginBottom: '1rem' }}>
+                  No student participants recorded yet. Add team members below.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
+                  {formData.studentParticipants.map((sp, idx) => {
+                    const sid = sp.studentId || sp.id || sp;
+                    const sObj = students.find(s => s.id === sid || s.studentId === sid || (sp.studentName && s.name.toLowerCase() === sp.studentName.toLowerCase())) || (formData._newStudents || []).find(s => s.id === sid) || { name: sp.studentName || sp.name || sid, department: sp.department || 'CSE' };
+                    return (
+                      <div
+                        key={sid || idx}
+                        style={{
+                          background: 'var(--bg-surface)',
+                          border: '1px solid var(--border-light)',
+                          borderRadius: '8px',
+                          padding: '0.75rem 1rem',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: '0.75rem',
+                          flexWrap: 'wrap'
+                        }}
                       >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <strong style={{ fontSize: '0.92rem', color: 'var(--text-primary)' }}>{sObj.name}</strong>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                              {sObj.studentId || sp.studentId || 'QU-2026'}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '0.76rem', color: 'var(--primary)', fontWeight: 600, marginTop: '2px' }}>
+                            {sp.award || 'Winner'} • Team: {sp.teamName || '—'} • Project: {sp.projectBuilt || '—'}
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          className="btn-icon-danger"
+                          onClick={() => handleRemoveStudent(sid)}
+                          style={{ padding: '4px' }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
+            ) : (
+              formData.facultyParticipants.length === 0 ? (
+                <div style={{ padding: '1rem', background: 'var(--bg-surface)', borderRadius: '8px', border: '1px dashed var(--border-light)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.84rem', marginBottom: '1rem' }}>
+                  No faculty participants recorded yet. Add faculty mentors/members below.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
+                  {formData.facultyParticipants.map((fp, idx) => {
+                    const fid = fp.facultyId || fp.id || fp;
+                    const fObj = faculty.find(f => f.id === fid || (fp.facultyName && f.name.toLowerCase() === fp.facultyName.toLowerCase())) || (formData._newFaculty || []).find(f => f.id === fid) || { name: fp.facultyName || fp.name || fid, department: fp.department || 'Physics' };
+                    return (
+                      <div
+                        key={fid || idx}
+                        style={{
+                          background: 'var(--bg-surface)',
+                          border: '1px solid var(--border-light)',
+                          borderRadius: '8px',
+                          padding: '0.75rem 1rem',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: '0.75rem',
+                          flexWrap: 'wrap'
+                        }}
+                      >
+                        <div>
+                          <strong style={{ fontSize: '0.92rem', color: 'var(--text-primary)' }}>{fObj.name}</strong>
+                          <div style={{ fontSize: '0.76rem', color: 'var(--secondary)', fontWeight: 600, marginTop: '2px' }}>
+                            {fp.award || 'Participant'} • Team: {fp.teamName || '—'} • Project: {fp.projectBuilt || '—'}
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          className="btn-icon-danger"
+                          onClick={() => handleRemoveFaculty(fid)}
+                          style={{ padding: '4px' }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
             )}
 
             {/* Sub-form */}
             <div style={{ background: 'var(--bg-surface)', border: '1px dashed var(--border-medium)', borderRadius: '8px', padding: '0.85rem 1rem' }}>
               <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                 <UserPlus size={14} style={{ color: 'var(--primary)' }} />
-                Add Participant / Winner to Hackathon:
+                Add Team Member / Winner (Max 6+ Members):
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.5rem', marginBottom: '0.5rem' }}>
                 <div>
-                  <select
-                    className="form-input"
-                    style={{ padding: '0.4rem 0.6rem', fontSize: '0.82rem' }}
-                    value={selectedExistingId}
-                    onChange={(e) => {
-                      setSelectedExistingId(e.target.value);
-                      if (e.target.value) setNewMemberName('');
-                    }}
-                  >
-                    <option value="">-- Choose registered student --</option>
-                    {students.map(s => (
-                      <option key={s.id} value={s.id}>{s.name} ({s.studentId || s.department})</option>
-                    ))}
-                  </select>
+                  <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Select Existing</label>
+                  {isStudentAudience ? (
+                    <select
+                      className="form-input"
+                      style={{ padding: '0.4rem 0.6rem', fontSize: '0.82rem' }}
+                      value={selectedExistingId}
+                      onChange={(e) => {
+                        setSelectedExistingId(e.target.value);
+                        if (e.target.value) setNewMemberName('');
+                      }}
+                    >
+                      <option value="">-- Choose registered student --</option>
+                      {students.map(s => (
+                        <option key={s.id} value={s.id}>{s.name} ({s.studentId || s.department})</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <select
+                      className="form-input"
+                      style={{ padding: '0.4rem 0.6rem', fontSize: '0.82rem' }}
+                      value={selectedExistingId}
+                      onChange={(e) => {
+                        setSelectedExistingId(e.target.value);
+                        if (e.target.value) setNewMemberName('');
+                      }}
+                    >
+                      <option value="">-- Choose registered faculty --</option>
+                      {faculty.map(f => (
+                        <option key={f.id} value={f.id}>{f.name} ({f.department})</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
 
                 {!selectedExistingId && (
                   <div>
+                    <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Or Enter Name</label>
                     <input
                       type="text"
                       className="form-input"
                       style={{ padding: '0.4rem 0.6rem', fontSize: '0.82rem' }}
-                      placeholder="Or enter new student name"
+                      placeholder={isStudentAudience ? "Student Full Name" : "Faculty Full Name"}
                       value={newMemberName}
                       onChange={(e) => setNewMemberName(e.target.value)}
                     />
                   </div>
                 )}
 
+                {!selectedExistingId && (
+                  <div>
+                    <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                      {isStudentAudience ? 'Student ID / Roll' : 'Title / Designation'}
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      style={{ padding: '0.4rem 0.6rem', fontSize: '0.82rem' }}
+                      placeholder={isStudentAudience ? "e.g. QU-8270" : "e.g. Mentor / PI"}
+                      value={newMemberExtra}
+                      onChange={(e) => setNewMemberExtra(e.target.value)}
+                    />
+                  </div>
+                )}
+
                 <div>
+                  <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                    Team Name <span style={{ fontWeight: 400 }}>(Optional)</span>
+                  </label>
                   <input
                     type="text"
                     className="form-input"
                     style={{ padding: '0.4rem 0.6rem', fontSize: '0.82rem' }}
-                    placeholder="Award / Placement"
+                    placeholder="e.g. Team 3 (Optional)"
+                    value={newMemberTeam}
+                    onChange={(e) => setNewMemberTeam(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                    Project Built <span style={{ fontWeight: 400 }}>(Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    style={{ padding: '0.4rem 0.6rem', fontSize: '0.82rem' }}
+                    placeholder="Project Solution (Optional)"
+                    value={newMemberProject}
+                    onChange={(e) => setNewMemberProject(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Position & Award Won</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    style={{ padding: '0.4rem 0.6rem', fontSize: '0.82rem' }}
+                    placeholder="e.g. Top 3 at JNTU-GV"
                     value={newMemberAward}
                     onChange={(e) => setNewMemberAward(e.target.value)}
                   />
@@ -459,9 +600,9 @@ export const EditHackathonModal = ({
                 type="button"
                 className="btn btn-primary btn-sm"
                 onClick={handleAddMemberToForm}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.25rem' }}
               >
-                <UserPlus size={13} /> + Attach Winner
+                <UserPlus size={13} /> + Attach Team Member
               </button>
             </div>
           </div>

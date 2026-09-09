@@ -48,11 +48,54 @@ export const StudentPapers = ({ onOpenProfile, onAddPaper }) => {
 
   if (selectedPaper) {
     const stuAuthors = (selectedPaper.studentAuthors || []).map(sid => {
-      return students.find(s => s.id === sid) || { id: sid, name: "Student Author", department: "Information Technology", studentId: "QU-2023" };
+      const idOrName = (typeof sid === 'object' && sid) ? (sid.id || sid.studentId || sid.name || sid.studentName) : sid;
+      const cleanNameCandidate = (typeof sid === 'object' && sid) ? (sid.name || sid.studentName) : (typeof sid === 'string' && !sid.startsWith('STU-') && !sid.startsWith('QU-') ? sid : '');
+      
+      const s = students.find(stu => 
+        stu.id === idOrName || 
+        stu.studentId === idOrName || 
+        (cleanNameCandidate && stu.name.toLowerCase() === cleanNameCandidate.toLowerCase()) ||
+        (typeof idOrName === 'string' && stu.name.toLowerCase() === idOrName.toLowerCase())
+      );
+      if (s) return s;
+
+      const fallbackName = cleanNameCandidate || (typeof idOrName === 'string' && !idOrName.startsWith('STU-') && !idOrName.startsWith('QU-') ? idOrName : (typeof sid === 'object' && sid?.name ? sid.name : (typeof idOrName === 'string' && idOrName.startsWith('STU-') ? `Student (${idOrName})` : "Student Author")));
+      const dept = (typeof sid === 'object' && sid?.department) ? sid.department : "Computer Science & Engineering";
+      const roll = (typeof sid === 'object' && sid?.studentId) ? sid.studentId : (typeof idOrName === 'string' && idOrName.startsWith('QU-') ? idOrName : "QU-2026");
+
+      return {
+        id: typeof idOrName === 'string' ? idOrName : (sid?.id || `STU-${Date.now()}`),
+        name: fallbackName,
+        department: dept,
+        studentId: roll,
+        avatar: fallbackName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
+        email: `${fallbackName.toLowerCase().replace(/[^a-z0-9]/g, '')}@student.quantum.edu`
+      };
     });
 
     const facMentors = (selectedPaper.facultyAuthors || []).map(fid => {
-      return faculty.find(f => f.id === fid) || { id: fid, name: "Dr. Faculty Mentor", department: "Physics" };
+      const idOrName = (typeof fid === 'object' && fid) ? (fid.id || fid.facultyId || fid.name || fid.facultyName) : fid;
+      const cleanNameCandidate = (typeof fid === 'object' && fid) ? (fid.name || fid.facultyName) : (typeof fid === 'string' && !fid.startsWith('FAC-') ? fid : '');
+
+      const f = faculty.find(fac => 
+        fac.id === idOrName || 
+        (cleanNameCandidate && fac.name.toLowerCase() === cleanNameCandidate.toLowerCase()) ||
+        (typeof idOrName === 'string' && fac.name.toLowerCase() === idOrName.toLowerCase())
+      );
+      if (f) return f;
+
+      const fallbackName = cleanNameCandidate || (typeof idOrName === 'string' && !idOrName.startsWith('FAC-') ? idOrName : (typeof fid === 'object' && fid?.name ? fid.name : (typeof idOrName === 'string' && idOrName.startsWith('FAC-') ? `Faculty (${idOrName})` : "Faculty Mentor")));
+      const dept = (typeof fid === 'object' && fid?.department) ? fid.department : "Physics & Quantum Computing";
+      const title = (typeof fid === 'object' && fid?.title) ? fid.title : "Faculty Mentor";
+
+      return {
+        id: typeof idOrName === 'string' ? idOrName : (fid?.id || `FAC-${Date.now()}`),
+        name: fallbackName,
+        department: dept,
+        title: title,
+        avatar: fallbackName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
+        email: `${fallbackName.toLowerCase().replace(/[^a-z0-9]/g, '')}@faculty.quantum.edu`
+      };
     });
 
     const handleDownloadSinglePaperPDF = () => {

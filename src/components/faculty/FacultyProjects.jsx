@@ -48,23 +48,63 @@ export const FacultyProjects = ({ onOpenProfile, onAddProject }) => {
 
   if (selectedProject) {
     const facultyList = (selectedProject.facultyInvolved || []).map(fi => {
-      const f = faculty.find(fac => fac.id === fi.facultyId) || {
-        id: fi.facultyId,
-        name: fi.facultyName || "Dr. Faculty Researcher",
-        department: fi.department || "Quantum Science",
-        title: "Principal Investigator"
+      const fid = (typeof fi === 'object' && fi) ? (fi.facultyId || fi.id || fi.name || fi.facultyName) : fi;
+      const cleanNameCandidate = (typeof fi === 'object' && fi) ? (fi.facultyName || fi.name) : (typeof fi === 'string' && !fi.startsWith('FAC-') ? fi : '');
+
+      const f = faculty.find(fac => 
+        fac.id === fid || 
+        fac.facultyId === fid || 
+        (cleanNameCandidate && fac.name.toLowerCase() === cleanNameCandidate.toLowerCase()) ||
+        (typeof fid === 'string' && fac.name.toLowerCase() === fid.toLowerCase())
+      );
+      if (f) return { ...fi, faculty: f, facultyName: f.name, department: f.department || fi.department || 'Quantum Science' };
+
+      const fallbackName = cleanNameCandidate || (typeof fid === 'string' && !fid.startsWith('FAC-') ? fid : (typeof fi === 'object' && fi?.facultyName ? fi.facultyName : (typeof fid === 'string' && fid.startsWith('FAC-') ? `Faculty (${fid})` : "Dr. Faculty Researcher")));
+      const dept = (typeof fi === 'object' && fi?.department) ? fi.department : "Quantum Science";
+      const title = (typeof fi === 'object' && fi?.title) ? fi.title : ((typeof fi === 'object' && fi?.role) ? fi.role : "Principal Investigator");
+
+      return {
+        ...fi,
+        faculty: {
+          id: typeof fid === 'string' ? fid : (fi?.id || `FAC-${Date.now()}`),
+          name: fallbackName,
+          department: dept,
+          title: title,
+          avatar: fallbackName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+        },
+        facultyName: fallbackName,
+        department: dept
       };
-      return { ...fi, faculty: f, facultyName: f.name, department: f.department };
     });
 
     const studentList = (selectedProject.studentsInvolved || []).map(si => {
-      const s = students.find(stu => stu.id === si.studentId) || {
-        id: si.studentId,
-        name: si.studentName || "Student Researcher",
-        department: si.department || "Information Technology",
-        studentId: si.roll || "QU-2025"
+      const sid = (typeof si === 'object' && si) ? (si.studentId || si.id || si.name || si.studentName) : si;
+      const cleanNameCandidate = (typeof si === 'object' && si) ? (si.studentName || si.name) : (typeof si === 'string' && !si.startsWith('STU-') && !si.startsWith('QU-') ? si : '');
+
+      const s = students.find(stu => 
+        stu.id === sid || 
+        stu.studentId === sid || 
+        (cleanNameCandidate && stu.name.toLowerCase() === cleanNameCandidate.toLowerCase()) ||
+        (typeof sid === 'string' && stu.name.toLowerCase() === sid.toLowerCase())
+      );
+      if (s) return { ...si, student: s, studentName: s.name, department: s.department || si.department || 'Computer Science & Engineering' };
+
+      const fallbackName = cleanNameCandidate || (typeof sid === 'string' && !sid.startsWith('STU-') && !sid.startsWith('QU-') ? sid : (typeof si === 'object' && si?.studentName ? si.studentName : (typeof sid === 'string' && sid.startsWith('STU-') ? `Student (${sid})` : "Student Researcher")));
+      const dept = (typeof si === 'object' && si?.department) ? si.department : "Computer Science & Engineering";
+      const roll = (typeof si === 'object' && (si?.roll || si?.studentId)) ? (si.roll || si.studentId) : (typeof sid === 'string' && sid.startsWith('QU-') ? sid : "QU-2025");
+
+      return {
+        ...si,
+        student: {
+          id: typeof sid === 'string' ? sid : (si?.id || `STU-${Date.now()}`),
+          name: fallbackName,
+          department: dept,
+          studentId: roll,
+          avatar: fallbackName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+        },
+        studentName: fallbackName,
+        department: dept
       };
-      return { ...si, student: s, studentName: s.name, department: s.department };
     });
 
     const handleDownloadSingleProjectPDF = () => {

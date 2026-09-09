@@ -374,38 +374,63 @@ export const QuantumDBProvider = ({ children }) => {
         const stuProjRows = [];
 
         stateToSave.projects.forEach(p => {
-          const isFaculty = p.targetAudience === 'faculty' || (!p.targetAudience && p.facultyInvolved && p.facultyInvolved.length > 0 && (!p.studentsInvolved || p.studentsInvolved.length === 0));
-          const isStudent = p.targetAudience === 'students' || p.targetAudience === 'student' || (!p.targetAudience && p.studentsInvolved && p.studentsInvolved.length > 0);
-
-          if (isFaculty) {
-            const facLead = (p.facultyInvolved || [])[0] || {};
+          if (p.facultyInvolved && p.facultyInvolved.length > 0) {
+            p.facultyInvolved.forEach((facLead, idx) => {
+              facProjRows.push({
+                id: p.id ? (p.facultyInvolved.length === 1 ? p.id : `${p.id}-FP-${idx + 1}`) : `PRJ-F-${Date.now()}-${idx}`,
+                title: p.title,
+                domain: p.domain || 'Quantum Computing',
+                tech_stack: Array.isArray(p.techStack) ? p.techStack.join(', ') : String(p.techStack || ''),
+                description: p.description || '',
+                status: p.status || 'Active Development',
+                github_url: p.githubUrl || '',
+                faculty_name: facLead.facultyName || facLead.name || 'Faculty PI',
+                faculty_id: facLead.facultyId || facLead.id || '',
+                role: facLead.role || 'Principal Investigator'
+              });
+            });
+          } else if (p.targetAudience === 'faculty') {
             facProjRows.push({
-              id: p.id,
+              id: p.id || `PRJ-F-${Date.now()}`,
               title: p.title,
               domain: p.domain || 'Quantum Computing',
               tech_stack: Array.isArray(p.techStack) ? p.techStack.join(', ') : String(p.techStack || ''),
               description: p.description || '',
               status: p.status || 'Active Development',
               github_url: p.githubUrl || '',
-              faculty_name: facLead.facultyName || 'Faculty PI',
-              faculty_id: facLead.facultyId || '',
-              role: facLead.role || 'Principal Investigator'
+              faculty_name: '',
+              faculty_id: '',
+              role: ''
             });
           }
 
-          if (isStudent) {
-            const stuLead = (p.studentsInvolved || [])[0] || {};
+          if (p.studentsInvolved && p.studentsInvolved.length > 0) {
+            p.studentsInvolved.forEach((stuLead, idx) => {
+              stuProjRows.push({
+                id: p.id ? (p.studentsInvolved.length === 1 ? p.id : `${p.id}-SP-${idx + 1}`) : `PRJ-S-${Date.now()}-${idx}`,
+                title: p.title,
+                domain: p.domain || 'Quantum Computing',
+                tech_stack: Array.isArray(p.techStack) ? p.techStack.join(', ') : String(p.techStack || ''),
+                description: p.description || '',
+                status: p.status || 'Active Development',
+                github_url: p.githubUrl || '',
+                student_name: stuLead.studentName || stuLead.name || 'Student Lead',
+                student_id: stuLead.studentId || stuLead.id || '',
+                role: stuLead.role || 'Project Developer'
+              });
+            });
+          } else if (p.targetAudience === 'students' || p.targetAudience === 'student') {
             stuProjRows.push({
-              id: p.id,
+              id: p.id || `PRJ-S-${Date.now()}`,
               title: p.title,
               domain: p.domain || 'Quantum Computing',
               tech_stack: Array.isArray(p.techStack) ? p.techStack.join(', ') : String(p.techStack || ''),
               description: p.description || '',
               status: p.status || 'Active Development',
               github_url: p.githubUrl || '',
-              student_name: stuLead.studentName || 'Student Lead',
-              student_id: stuLead.studentId || '',
-              role: stuLead.role || 'Project Lead & Developer'
+              student_name: '',
+              student_id: '',
+              role: ''
             });
           }
         });
@@ -782,57 +807,82 @@ export const QuantumDBProvider = ({ children }) => {
         });
       }
 
-      // Faculty Projects
+      // Faculty & Student Projects
+      const projMap = new Map();
+
       if (facPrjRes.status === 'fulfilled' && facPrjRes.value.data && facPrjRes.value.data.length > 0) {
         hasDedicatedData = true;
         facPrjRes.value.data.forEach(fp => {
+          const key = (fp.title || '').trim().toLowerCase();
           const file = getDoc(fp.id);
-          loadedProjects.push({
-            id: fp.id,
-            title: fp.title,
-            domain: fp.domain || 'Quantum Computing',
-            techStack: typeof fp.tech_stack === 'string' ? fp.tech_stack.split(',').map(s => s.trim()).filter(Boolean) : (Array.isArray(fp.tech_stack) ? fp.tech_stack : []),
-            description: fp.description || '',
-            status: fp.status || 'Active Development',
-            githubUrl: fp.github_url || '',
-            targetAudience: 'faculty',
-            uploadedFile: file,
-            facultyInvolved: fp.faculty_name ? [{
-              facultyId: fp.faculty_id || 'FAC-01',
-              facultyName: fp.faculty_name,
-              role: fp.role || 'Principal Investigator',
-              department: 'Quantum Science'
-            }] : [],
-            studentsInvolved: []
-          });
+          const facObj = fp.faculty_name ? {
+            facultyId: fp.faculty_id || `FAC-${Date.now()}`,
+            facultyName: fp.faculty_name,
+            name: fp.faculty_name,
+            role: fp.role || 'Principal Investigator',
+            department: 'Quantum Science'
+          } : null;
+
+          if (projMap.has(key)) {
+            const existing = projMap.get(key);
+            if (facObj && !existing.facultyInvolved.some(f => f.facultyName === facObj.facultyName)) {
+              existing.facultyInvolved.push(facObj);
+            }
+          } else {
+            projMap.set(key, {
+              id: fp.id ? String(fp.id).split('-FP-')[0] : `PRJ-${Date.now()}`,
+              title: fp.title,
+              domain: fp.domain || 'Quantum Computing',
+              techStack: typeof fp.tech_stack === 'string' ? fp.tech_stack.split(',').map(s => s.trim()).filter(Boolean) : (Array.isArray(fp.tech_stack) ? fp.tech_stack : []),
+              description: fp.description || '',
+              status: fp.status || 'Active Development',
+              githubUrl: fp.github_url || '',
+              targetAudience: 'faculty',
+              uploadedFile: file,
+              facultyInvolved: facObj ? [facObj] : [],
+              studentsInvolved: []
+            });
+          }
         });
       }
 
-      // Student Projects
       if (stuPrjRes.status === 'fulfilled' && stuPrjRes.value.data && stuPrjRes.value.data.length > 0) {
         hasDedicatedData = true;
         stuPrjRes.value.data.forEach(sp => {
+          const key = (sp.title || '').trim().toLowerCase();
           const file = getDoc(sp.id);
-          loadedProjects.push({
-            id: sp.id,
-            title: sp.title,
-            domain: sp.domain || 'Quantum Computing',
-            techStack: typeof sp.tech_stack === 'string' ? sp.tech_stack.split(',').map(s => s.trim()).filter(Boolean) : (Array.isArray(sp.tech_stack) ? sp.tech_stack : []),
-            description: sp.description || '',
-            status: sp.status || 'Active Development',
-            githubUrl: sp.github_url || '',
-            targetAudience: 'students',
-            uploadedFile: file,
-            facultyInvolved: [],
-            studentsInvolved: sp.student_name ? [{
-              studentId: sp.student_id || 'STU-01',
-              studentName: sp.student_name,
-              role: sp.role || 'Project Lead & Developer',
-              department: 'Computer Science'
-            }] : []
-          });
+          const stuObj = sp.student_name ? {
+            studentId: sp.student_id || `STU-${Date.now()}`,
+            studentName: sp.student_name,
+            name: sp.student_name,
+            role: sp.role || 'Project Developer',
+            department: 'Computer Science & Engineering'
+          } : null;
+
+          if (projMap.has(key)) {
+            const existing = projMap.get(key);
+            if (stuObj && !existing.studentsInvolved.some(s => s.studentName === stuObj.studentName)) {
+              existing.studentsInvolved.push(stuObj);
+            }
+          } else {
+            projMap.set(key, {
+              id: sp.id ? String(sp.id).split('-SP-')[0] : `PRJ-${Date.now()}`,
+              title: sp.title,
+              domain: sp.domain || 'Quantum Computing',
+              techStack: typeof sp.tech_stack === 'string' ? sp.tech_stack.split(',').map(s => s.trim()).filter(Boolean) : (Array.isArray(sp.tech_stack) ? sp.tech_stack : []),
+              description: sp.description || '',
+              status: sp.status || 'Active Development',
+              githubUrl: sp.github_url || '',
+              targetAudience: 'students',
+              uploadedFile: file,
+              facultyInvolved: [],
+              studentsInvolved: stuObj ? [stuObj] : []
+            });
+          }
         });
       }
+
+      loadedProjects = Array.from(projMap.values());
 
       // Faculty Papers
       if (facPapRes.status === 'fulfilled' && facPapRes.value.data && facPapRes.value.data.length > 0) {
@@ -974,7 +1024,34 @@ export const QuantumDBProvider = ({ children }) => {
         loadedHackathons.push(...hckMap.values());
       }
 
-      // Auto-extract faculty & student profiles if missing
+      // Auto-extract faculty & student profiles if missing from Projects
+      loadedProjects.forEach(p => {
+        (p.facultyInvolved || []).forEach(fp => {
+          if (fp.facultyName && !loadedFaculty.some(f => f.name.toLowerCase() === fp.facultyName.toLowerCase() || f.id === fp.facultyId)) {
+            loadedFaculty.push({
+              id: fp.facultyId || `FAC-${loadedFaculty.length + 1}`,
+              name: fp.facultyName,
+              department: fp.department || 'Physics & Quantum Computing',
+              title: fp.role || 'Principal Investigator',
+              avatar: fp.facultyName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+            });
+          }
+        });
+        (p.studentsInvolved || []).forEach(sp => {
+          if (sp.studentName && !loadedStudents.some(s => s.name.toLowerCase() === sp.studentName.toLowerCase() || s.id === sp.studentId)) {
+            loadedStudents.push({
+              id: sp.studentId || `STU-${loadedStudents.length + 1}`,
+              name: sp.studentName,
+              studentId: sp.studentId || `QU-${Math.floor(1000 + Math.random() * 9000)}`,
+              department: sp.department || 'Computer Science & Engineering',
+              year: 'Student Developer',
+              avatar: sp.studentName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+            });
+          }
+        });
+      });
+
+      // Auto-extract faculty & student profiles if missing from Hackathons
       loadedHackathons.forEach(h => {
         (h.facultyParticipants || []).forEach(fp => {
           if (fp.facultyName && !loadedFaculty.some(f => f.name.toLowerCase() === fp.facultyName.toLowerCase() || f.id === fp.facultyId)) {
@@ -1087,9 +1164,28 @@ export const QuantumDBProvider = ({ children }) => {
         const baseProjects = Array.isArray(cloudData.projects) ? cloudData.projects : [];
         const projIdSet = new Set(baseProjects.map(p => String(p.id).toLowerCase()));
         loadedProjects.forEach(lp => {
-          if (!projIdSet.has(String(lp.id).toLowerCase())) {
+          const key = String(lp.id).toLowerCase();
+          if (!projIdSet.has(key)) {
             baseProjects.push(lp);
-            projIdSet.add(String(lp.id).toLowerCase());
+            projIdSet.add(key);
+          } else {
+            const existing = baseProjects.find(bp => String(bp.id).toLowerCase() === key);
+            if (existing) {
+              (lp.facultyInvolved || []).forEach(lf => {
+                if (!existing.facultyInvolved) existing.facultyInvolved = [];
+                const lfId = lf.facultyId || lf.id || lf.name || lf.facultyName;
+                if (!existing.facultyInvolved.some(f => (f.facultyId || f.id || f.name || f.facultyName) === lfId)) {
+                  existing.facultyInvolved.push(lf);
+                }
+              });
+              (lp.studentsInvolved || []).forEach(ls => {
+                if (!existing.studentsInvolved) existing.studentsInvolved = [];
+                const lsId = ls.studentId || ls.id || ls.name || ls.studentName;
+                if (!existing.studentsInvolved.some(s => (s.studentId || s.id || s.name || s.studentName) === lsId)) {
+                  existing.studentsInvolved.push(ls);
+                }
+              });
+            }
           }
         });
 
@@ -1129,7 +1225,30 @@ export const QuantumDBProvider = ({ children }) => {
         const mergedCerts = Array.from(localCertMap.values());
 
         const localProjMap = new Map((localCurrent.projects || []).map(p => [String(p.id).toLowerCase(), p]));
-        baseProjects.forEach(p => localProjMap.set(String(p.id).toLowerCase(), p));
+        baseProjects.forEach(p => {
+          const key = String(p.id).toLowerCase();
+          if (localProjMap.has(key)) {
+            const loc = localProjMap.get(key);
+            const facList = [...(p.facultyInvolved || [])];
+            (loc.facultyInvolved || []).forEach(lf => {
+              const lfId = lf.facultyId || lf.id || lf.name || lf.facultyName;
+              if (!facList.some(f => (f.facultyId || f.id || f.name || f.facultyName) === lfId)) facList.push(lf);
+            });
+            const stuList = [...(p.studentsInvolved || [])];
+            (loc.studentsInvolved || []).forEach(ls => {
+              const lsId = ls.studentId || ls.id || ls.name || ls.studentName;
+              if (!stuList.some(s => (s.studentId || s.id || s.name || s.studentName) === lsId)) stuList.push(ls);
+            });
+            localProjMap.set(key, {
+              ...loc,
+              ...p,
+              facultyInvolved: facList,
+              studentsInvolved: stuList
+            });
+          } else {
+            localProjMap.set(key, p);
+          }
+        });
         const mergedProjects = Array.from(localProjMap.values());
 
         const localPaperMap = new Map((localCurrent.researchPapers || []).map(p => [String(p.id).toLowerCase(), p]));

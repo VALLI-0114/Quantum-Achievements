@@ -15,21 +15,21 @@ export const FacultyHackathons = ({ onOpenProfile, onAddHackathon }) => {
   const selectedHackathon = hackathons.find(h => h.id === selectedHackathonId);
 
   const filteredHackathons = hackathons.filter(h => {
-    // Exclude hackathons explicitly targeted for students
-    if (h.targetAudience === 'students' || h.targetAudience === 'student') return false;
+    const hasFaculty = Array.isArray(h.facultyParticipants) && h.facultyParticipants.length > 0;
+    const isFacultyTargeted = h.targetAudience === 'faculty' || h.targetAudience === 'all';
 
-    const isFacultyHackathon = h.targetAudience === 'faculty' ||
-      (!h.targetAudience && h.facultyParticipants && h.facultyParticipants.length > 0 && (!h.studentParticipants || h.studentParticipants.length === 0)) ||
-      (!h.targetAudience && (!h.studentParticipants || h.studentParticipants.length === 0));
+    if (!hasFaculty && (h.targetAudience === 'students' || h.targetAudience === 'student')) return false;
+
+    const isFacultyHackathon = hasFaculty || isFacultyTargeted || (!h.targetAudience && (!h.studentParticipants || h.studentParticipants.length === 0));
 
     if (!isFacultyHackathon) return false;
 
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
     return (
-      h.name.toLowerCase().includes(q) ||
-      h.organizer.toLowerCase().includes(q) ||
-      h.edition.toLowerCase().includes(q)
+      (h.name && h.name.toLowerCase().includes(q)) ||
+      (h.organizer && h.organizer.toLowerCase().includes(q)) ||
+      (h.edition && h.edition.toLowerCase().includes(q))
     );
   });
 

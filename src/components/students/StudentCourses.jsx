@@ -14,15 +14,12 @@ export const StudentCourses = ({ onOpenCertificate, onOpenProfile, onAddCourse }
   const selectedCourse = courses.find(c => c.id === selectedCourseId);
 
   const filteredCourses = courses.filter(c => {
-    // Exclude courses explicitly targeted for faculty
-    if (c.targetAudience === 'faculty') return false;
+    const hasStudents = (c.studentCompletions && c.studentCompletions.length > 0) || (c.studentEnrolled && c.studentEnrolled.length > 0);
+    const isStudentTargeted = c.targetAudience === 'students' || c.targetAudience === 'student' || c.targetAudience === 'all';
 
-    const isStudentCourse = c.targetAudience === 'students' || c.targetAudience === 'student' ||
-      (!c.targetAudience && (
-        (c.studentCompletions && c.studentCompletions.length > 0) ||
-        (c.studentEnrolled && c.studentEnrolled.length > 0) ||
-        (!c.facultyCompletions || c.facultyCompletions.length === 0)
-      ));
+    if (!hasStudents && c.targetAudience === 'faculty') return false;
+
+    const isStudentCourse = hasStudents || isStudentTargeted || (!c.targetAudience && (!c.facultyCompletions || c.facultyCompletions.length === 0));
 
     if (!isStudentCourse) return false;
 

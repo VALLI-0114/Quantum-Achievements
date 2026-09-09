@@ -16,20 +16,21 @@ export const StudentProjects = ({ onOpenProfile, onAddProject }) => {
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
   const filteredProjects = projects.filter(p => {
-    // Exclude projects explicitly targeted for faculty
-    if (p.targetAudience === 'faculty') return false;
+    const hasStudents = Array.isArray(p.studentsInvolved) && p.studentsInvolved.length > 0;
+    const isStudentTargeted = p.targetAudience === 'students' || p.targetAudience === 'student' || p.targetAudience === 'all';
 
-    const isStudentProject = p.targetAudience === 'students' || p.targetAudience === 'student' ||
-      (!p.targetAudience && p.studentsInvolved && p.studentsInvolved.length > 0) ||
-      (!p.targetAudience && (!p.facultyInvolved || p.facultyInvolved.length === 0));
+    // If it has students involved or is targeted for students, always show
+    if (!hasStudents && p.targetAudience === 'faculty') return false;
+
+    const isStudentProject = hasStudents || isStudentTargeted || (!p.targetAudience && (!p.facultyInvolved || p.facultyInvolved.length === 0));
 
     if (!isStudentProject) return false;
 
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
     return (
-      p.title.toLowerCase().includes(q) ||
-      p.domain.toLowerCase().includes(q) ||
+      (p.title && p.title.toLowerCase().includes(q)) ||
+      (p.domain && p.domain.toLowerCase().includes(q)) ||
       p.techStack?.some(t => t.toLowerCase().includes(q))
     );
   });

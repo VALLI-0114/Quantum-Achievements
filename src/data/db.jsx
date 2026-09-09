@@ -601,7 +601,7 @@ export const QuantumDBProvider = ({ children }) => {
         facPapRes, stuPapRes,
         facHckRes, stuHckRes,
         facRes, stuRes,
-        allPortalRowsRes
+        mainStateRes
       ] = await Promise.allSettled([
         supabase.from('faculty_courses').select('*'),
         supabase.from('student_courses').select('*'),
@@ -615,61 +615,51 @@ export const QuantumDBProvider = ({ children }) => {
         supabase.from('student_hackathons').select('*'),
         supabase.from('faculty').select('*'),
         supabase.from('students').select('*'),
-        supabase.from('quantum_portal_data').select('*')
+        supabase.from('quantum_portal_data').select('id, data, updated_at').eq('id', 'main_state').limit(1)
       ]);
 
       // Build Document Map for all uploaded images and scans in Supabase
       const docMap = new Map();
       let mainStateRow = null;
 
-      if (allPortalRowsRes.status === 'fulfilled' && allPortalRowsRes.value.data) {
-        allPortalRowsRes.value.data.forEach(row => {
-          if (row.id === 'main_state') {
-            mainStateRow = row;
-            // Also index files from main_state
-            const state = row.data || {};
-            state.courses?.forEach(c => {
-              if (c.uploadedFile) {
-                docMap.set(c.id, c.uploadedFile);
-                docMap.set(`doc_${c.id}`, c.uploadedFile);
-              }
-              c.facultyCompletions?.forEach(fc => {
-                if (fc.uploadedFile) {
-                  if (fc.certificateId) docMap.set(fc.certificateId, fc.uploadedFile);
-                  docMap.set(`${c.id}_${fc.facultyId}`, fc.uploadedFile);
-                }
-              });
-              c.studentCompletions?.forEach(sc => {
-                if (sc.uploadedFile) {
-                  if (sc.certificateId) docMap.set(sc.certificateId, sc.uploadedFile);
-                  docMap.set(`${c.id}_${sc.studentId}`, sc.uploadedFile);
-                }
-              });
-            });
-            state.certificates?.forEach(cert => {
-              if (cert.uploadedFile) {
-                docMap.set(cert.id, cert.uploadedFile);
-                docMap.set(`doc_${cert.id}`, cert.uploadedFile);
-              }
-              cert.facultyRecipients?.forEach(fr => {
-                if (fr.uploadedFile) {
-                  if (fr.credentialId) docMap.set(fr.credentialId, fr.uploadedFile);
-                  docMap.set(`${cert.id}_${fr.facultyId}`, fr.uploadedFile);
-                }
-              });
-              cert.studentRecipients?.forEach(sr => {
-                if (sr.uploadedFile) {
-                  if (sr.credentialId) docMap.set(sr.credentialId, sr.uploadedFile);
-                  docMap.set(`${cert.id}_${sr.studentId}`, sr.uploadedFile);
-                }
-              });
-            });
-          } else if (row.id?.startsWith('doc_') && row.data) {
-            const rawId = row.id.replace('doc_', '');
-            docMap.set(rawId, row.data);
-            docMap.set(row.id, row.data);
-            if (row.data.recordId) docMap.set(row.data.recordId, row.data);
+      if (mainStateRes.status === 'fulfilled' && mainStateRes.value?.data?.[0]) {
+        mainStateRow = mainStateRes.value.data[0];
+        const state = mainStateRow.data || {};
+        state.courses?.forEach(c => {
+          if (c.uploadedFile) {
+            docMap.set(c.id, c.uploadedFile);
+            docMap.set(`doc_${c.id}`, c.uploadedFile);
           }
+          c.facultyCompletions?.forEach(fc => {
+            if (fc.uploadedFile) {
+              if (fc.certificateId) docMap.set(fc.certificateId, fc.uploadedFile);
+              docMap.set(`${c.id}_${fc.facultyId}`, fc.uploadedFile);
+            }
+          });
+          c.studentCompletions?.forEach(sc => {
+            if (sc.uploadedFile) {
+              if (sc.certificateId) docMap.set(sc.certificateId, sc.uploadedFile);
+              docMap.set(`${c.id}_${sc.studentId}`, sc.uploadedFile);
+            }
+          });
+        });
+        state.certificates?.forEach(cert => {
+          if (cert.uploadedFile) {
+            docMap.set(cert.id, cert.uploadedFile);
+            docMap.set(`doc_${cert.id}`, cert.uploadedFile);
+          }
+          cert.facultyRecipients?.forEach(fr => {
+            if (fr.uploadedFile) {
+              if (fr.credentialId) docMap.set(fr.credentialId, fr.uploadedFile);
+              docMap.set(`${cert.id}_${fr.facultyId}`, fr.uploadedFile);
+            }
+          });
+          cert.studentRecipients?.forEach(sr => {
+            if (sr.uploadedFile) {
+              if (sr.credentialId) docMap.set(sr.credentialId, sr.uploadedFile);
+              docMap.set(`${cert.id}_${sr.studentId}`, sr.uploadedFile);
+            }
+          });
         });
       }
 
@@ -830,6 +820,7 @@ export const QuantumDBProvider = ({ children }) => {
           const file = getDoc(fp.id);
           const facObj = fp.faculty_name ? {
             facultyId: fp.faculty_id || `FAC-${Date.now()}`,
+            id: fp.faculty_id || `FAC-${Date.now()}`,
             facultyName: fp.faculty_name,
             name: fp.faculty_name,
             role: fp.role || 'Principal Investigator',
@@ -838,7 +829,10 @@ export const QuantumDBProvider = ({ children }) => {
 
           if (projMap.has(key)) {
             const existing = projMap.get(key);
-            if (facObj && !existing.facultyInvolved.some(f => f.facultyName === facObj.facultyName)) {
+            if (facObj && !existing.facultyInvolved.some(f => 
+              (f.facultyName && f.facultyName.toLowerCase() === facObj.facultyName.toLowerCase()) ||
+              (f.facultyId && String(f.facultyId) === String(facObj.facultyId))
+            )) {
               existing.facultyInvolved.push(facObj);
             }
           } else {
@@ -865,25 +859,23 @@ export const QuantumDBProvider = ({ children }) => {
           const rawId = sp.id ? String(sp.id).split('-SP-')[0] : '';
           const key = (sp.title || '').trim().toLowerCase();
           const file = getDoc(sp.id);
-          const stuObj = sp.student_name ? {
+          
+          const stuLeadName = sp.student_name || (sp.student_id ? (loadedStudents?.find(s => s.studentId === sp.student_id || s.id === sp.student_id)?.name) : '') || '';
+          
+          const stuObj = stuLeadName ? {
             studentId: sp.student_id || `STU-${Date.now()}`,
             id: sp.student_id || `STU-${Date.now()}`,
-            studentName: sp.student_name,
-            name: sp.student_name,
+            studentName: stuLeadName,
+            name: stuLeadName,
             role: sp.role || 'Project Developer',
             department: 'Information Technology'
           } : null;
 
+          let targetProject = null;
           if (projMap.has(key)) {
-            const existing = projMap.get(key);
-            if (stuObj && !existing.studentsInvolved.some(s => 
-              (s.studentName && s.studentName.toLowerCase() === stuObj.studentName.toLowerCase()) || 
-              (s.studentId && String(s.studentId) === String(stuObj.studentId))
-            )) {
-              existing.studentsInvolved.push(stuObj);
-            }
+            targetProject = projMap.get(key);
           } else {
-            projMap.set(key, {
+            targetProject = {
               id: rawId || (sp.id ? String(sp.id).split('-SP-')[0] : `PRJ-${Date.now()}`),
               title: sp.title,
               domain: sp.domain || 'Quantum Computing',
@@ -894,13 +886,47 @@ export const QuantumDBProvider = ({ children }) => {
               targetAudience: 'students',
               uploadedFile: file,
               facultyInvolved: [],
-              studentsInvolved: stuObj ? [stuObj] : []
+              studentsInvolved: []
+            };
+            projMap.set(key, targetProject);
+          }
+
+          if (stuObj && !targetProject.studentsInvolved.some(s => 
+            (s.studentName && s.studentName.toLowerCase() === stuObj.studentName.toLowerCase()) || 
+            (s.studentId && String(s.studentId) === String(stuObj.studentId))
+          )) {
+            targetProject.studentsInvolved.push(stuObj);
+          }
+
+          // Parse team_members if provided
+          if (sp.team_members && typeof sp.team_members === 'string') {
+            const memberNames = sp.team_members.split(',').map(m => m.trim()).filter(Boolean);
+            memberNames.forEach(name => {
+              if (name && !targetProject.studentsInvolved.some(s => (s.studentName || s.name || '').toLowerCase() === name.toLowerCase())) {
+                const matchedStu = loadedStudents?.find(s => s.name?.toLowerCase() === name.toLowerCase());
+                targetProject.studentsInvolved.push({
+                  studentId: matchedStu?.studentId || matchedStu?.id || `STU-${Date.now()}-${Math.floor(Math.random()*1000)}`,
+                  id: matchedStu?.id || `STU-${Date.now()}-${Math.floor(Math.random()*1000)}`,
+                  studentName: name,
+                  name: name,
+                  role: 'Team Member',
+                  department: matchedStu?.department || 'Information Technology'
+                });
+              }
             });
           }
         });
       }
 
-      loadedProjects = Array.from(projMap.values());
+      loadedProjects = Array.from(projMap.values()).map(p => {
+        const hasFac = (p.facultyInvolved || []).length > 0;
+        const hasStu = (p.studentsInvolved || []).length > 0;
+        let targetAudience = p.targetAudience;
+        if (hasFac && hasStu) targetAudience = 'all';
+        else if (hasStu && !hasFac) targetAudience = 'students';
+        else if (hasFac && !hasStu) targetAudience = 'faculty';
+        return { ...p, targetAudience };
+      });
 
       // Faculty Papers
       if (facPapRes.status === 'fulfilled' && facPapRes.value.data && facPapRes.value.data.length > 0) {

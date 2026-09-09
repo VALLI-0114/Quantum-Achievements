@@ -16,19 +16,19 @@ export const FacultyPapers = ({ onOpenProfile, onAddPaper }) => {
   const selectedPaper = researchPapers.find(p => p.id === selectedPaperId);
 
   const filteredPapers = researchPapers.filter(p => {
-    // Exclude research papers explicitly targeted for students
-    if (p.targetAudience === 'students' || p.targetAudience === 'student') return false;
+    const hasFaculty = Array.isArray(p.facultyAuthors) && p.facultyAuthors.length > 0;
+    const isFacultyTargeted = p.targetAudience === 'faculty' || p.targetAudience === 'all';
 
-    const isFacultyPaper = p.targetAudience === 'faculty' ||
-      (!p.targetAudience && p.facultyAuthors && p.facultyAuthors.length > 0 && (!p.studentAuthors || p.studentAuthors.length === 0)) ||
-      (!p.targetAudience && (!p.studentAuthors || p.studentAuthors.length === 0));
+    if (!hasFaculty && (p.targetAudience === 'students' || p.targetAudience === 'student')) return false;
+
+    const isFacultyPaper = hasFaculty || isFacultyTargeted || (!p.targetAudience && (!p.studentAuthors || p.studentAuthors.length === 0));
 
     if (!isFacultyPaper) return false;
 
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
     return (
-      p.title.toLowerCase().includes(q) ||
+      (p.title && p.title.toLowerCase().includes(q)) ||
       (p.venue && p.venue.toLowerCase().includes(q)) ||
       (p.researchArea && p.researchArea.toLowerCase().includes(q))
     );

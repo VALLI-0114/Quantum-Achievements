@@ -14,14 +14,12 @@ export const FacultyCertificates = ({ onOpenCertificate, onOpenProfile, onAddCer
   const selectedCert = certificates.find(c => c.id === selectedCertId);
 
   const filteredCerts = certificates.filter(c => {
-    // Exclude certificates explicitly targeted for students
-    if (c.targetAudience === 'students' || c.targetAudience === 'student') return false;
+    const hasFaculty = Array.isArray(c.facultyRecipients) && c.facultyRecipients.length > 0;
+    const isFacultyTargeted = c.targetAudience === 'faculty' || c.targetAudience === 'all';
 
-    const isFacultyCert = c.targetAudience === 'faculty' ||
-      (!c.targetAudience && (
-        (c.facultyRecipients && c.facultyRecipients.length > 0) ||
-        (!c.studentRecipients || c.studentRecipients.length === 0)
-      ));
+    if (!hasFaculty && (c.targetAudience === 'students' || c.targetAudience === 'student')) return false;
+
+    const isFacultyCert = hasFaculty || isFacultyTargeted || (!c.targetAudience && (!c.studentRecipients || c.studentRecipients.length === 0));
 
     if (!isFacultyCert) return false;
 
